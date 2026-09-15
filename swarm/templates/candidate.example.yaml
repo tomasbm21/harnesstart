@@ -1,0 +1,23 @@
+# research/candidates/<domain>.yaml — one entry per component, product or pattern.
+# Copy this shape. Unknown fields: write "unknown", never guess.
+- id: d1-firecracker                  # <domain>-<slug>, unique across the registry
+  name: Firecracker
+  url: https://github.com/firecracker-microvm/firecracker
+  kind: repo                          # repo | product | pattern | paper | protocol
+  domain: D1
+  what_it_is: KVM-based microVM monitor from AWS; minimal device model.
+  license: Apache-2.0                 # from the LICENSE file or official page
+  last_activity: unknown              # YYYY-MM-DD; verify_candidates.py fills this for git repos
+  maintainers: unknown                # org / number of active committers if you can see it
+  runs_on: [linux-kvm]                # linux-kvm | nested-apple-silicon | macos | cloud-only | unknown
+  answers: [Q1, Q2]                   # which BRIEF questions this helps answer
+  fit: partial                        # strong | partial | weak — against BRIEF R1–R8
+  fit_why: Strong isolation; needs /dev/kvm, so on the Mac only inside a nested-virt Linux VM.
+  price: n/a                          # products: plan + price + source URL + date seen
+  evidence:
+    - "https://github.com/firecracker-microvm/firecracker (README: KVM requirement)"
+    - "ran: git ls-remote https://github.com/firecracker-microvm/firecracker → exists"
+  tried: false                        # true if you actually ran it; paste output in the scouting file
+  red_flags: []
+  found_via: 'search:"hardware isolated sandbox for ai agents"'   # seed | search:"<query>" | link from <url>
+  status: unverified                  # unverified → verified | false (set by the verifier)

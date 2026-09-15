@@ -1,0 +1,14 @@
+# secrets
+claw.env
+.env
+*.key
+*.pem
+
+# swarm machinery
+.worktrees/
+_to_delete/
+
+# tooling
+__pycache__/
+.venv/
+.DS_Store

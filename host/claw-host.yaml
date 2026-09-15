@@ -1,0 +1,14 @@
+# Norfront Claw host: a Linux VM on the Mac with nested virtualization,
+# so Firecracker microVMs can run inside it.
+# Created by host/10-create-host.sh, which also mounts ONLY this folder at /srv/claw.
+minimumLimaVersion: 2.0.0
+base:
+- template:_images/ubuntu-24.04
+vmType: vz
+nestedVirtualization: true   # Apple M3+ and macOS 15+ only
+cpus: 6                      # overridden by CLAW_CPUS
+memory: "24GiB"              # overridden by CLAW_MEMORY_GIB
+disk: "200GiB"               # sparse; overridden by CLAW_DISK_GIB
+mounts: []                   # never mount ~ — agents inside this VM can reach any mount
+ssh:
+  forwardAgent: false        # don't hand your Mac's SSH keys to the VM

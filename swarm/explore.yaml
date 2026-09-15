@@ -1,0 +1,282 @@
+# Norfront Claw — explore & decide board (claw-explore). Seeded by: bash swarm/40-seed-board.sh explore
+# Parents must appear before children. gate: true = parked for Tomas (no assignee, never dispatched).
+# Research, proposal and judging cards are completed by their owner; V1/V2 check the facts.
+
+defaults:
+  max_runtime: 2h
+
+scout_footer: &scout_footer |
+  Deliver:
+  - research/candidates/{key}.yaml — ≤25 entries in the shape of swarm/templates/candidate.example.yaml.
+  - research/scouting/{key}.md — ≤2 pages: landscape in your lens, 3 things that surprised you, what you actually
+    ran (commands + output), open questions, and your search log (queries + where they led).
+  Rules: seeds are leads, not a whitelist — ≥40% of entries must be found by your own searching; include ≥1 wildcard
+  from an adjacent field; no entry without evidence; mark unknowns "unknown". Don't open swarm/sealed/.
+  Done when: committed, rebased, merged with `git -C /srv/claw merge --ff-only card/{key}`, then kanban_complete with
+  a 5-line summary. V1 fact-checks you.
+
+cards:
+
+# ── Phase 0 · tools check ────────────────────────────────────────────────────
+- key: F0
+  title: Check the swarm's tools before spending money
+  assignee: lead
+  max_runtime: 1h
+  body: |
+    Goal: every scout card can actually run.
+    Do: confirm web_search + web_extract return real results (note the backend and any rate limits); confirm git
+    and `gh` reach GitHub (note whether gh is authenticated); run `python3 swarm/tools/verify_candidates.py
+    swarm/templates/` and read its output; confirm this DeepSeek-backed worker can call kanban tools; record
+    `hermes --version`, model/provider per profile, kernel, /dev/kvm.
+    Deliver: docs/adr/000-swarm-baseline.md. If something is broken, fix what you can and block needs_input for Tomas
+    with the exact fix (e.g. "add WEB_BACKEND + WEB_API_KEY to claw.env and re-run ./start.sh").
+    Done when: a scout could start right now without hitting a broken tool.
+
+# ── Phase 1 · scout the market (three lenses, in parallel) ───────────────────
+- key: D1
+  title: "Scout: isolation and VM layer"
+  assignee: lean
+  parents: [F0]
+  body: |
+    Question: what can give each agent (or zone) a hardware-isolated, persistent computer inside a Linux VM on Apple
+    Silicon AND on bare Linux? Answers BRIEF Q1, Q2.
+    Seeds: Firecracker, Cloud Hypervisor, Kata Containers, libkrun, QEMU microvm, Lima, SmolVM (CelestoAI), microvm
+    (0xthierry), Pyro (danievanzyl), PandaStack, zeroboot, AgentENV (kvcache-ai), microsandbox, E2B open-source infra,
+    OpenClawMachines (mathaix), strangeClaw, fireclaw, fishman/awesome-agent-sandbox, Apple Containerization (macOS
+    comparison point).
+    Must cover: nested-virt reality on Apple Silicon (which chips/OS, measured overhead if anyone published it);
+    persistence model (disk, memory snapshots); networking + egress hooks; management API; who maintains it.
+    Try at least 2 candidates hands-on inside claw-host.
+  footer: *scout_footer
+
+- key: D2
+  title: "Scout: agent runtimes (the brain)"
+  assignee: lean
+  parents: [F0]
+  body: |
+    Question: which self-hosted agent runtime should drive the computers — and should it be adopted, extended by
+    plugin, or forked? Answers Q3, Q4.
+    Seeds: Hermes Agent (NousResearch) — incumbent, not a given; OpenClaw; NVIDIA NemoClaw; OpenHands; Goose; Letta;
+    community Hermes layers (outsourc-e/hermes-workspace, smfworks/hermes-ai-team, must-mohsin1/hermes-devcrew,
+    linke-ai/hermes-agent-team, frankxai/awesome-hermes-agents).
+    Must cover: memory + skill learning; multi-agent primitives; remote execution backends (SSH/VM/CDP); tool-calling
+    robustness with DeepSeek-class models (look for real reports); release cadence and breaking-change history;
+    license. Install at least one runtime other than Hermes and run a hello-world task.
+  footer: *scout_footer
+
+- key: D3
+  title: "Scout: computer use, browsers and screens"
+  assignee: fortress
+  parents: [F0]
+  body: |
+    Question: how does an agent use its computer (headless browser, full desktop, both), and how does Tomas watch and
+    take over? Answers Q6.
+    Seeds: trycua/cua (incl. Lume), Browser Use, Playwright, Chrome DevTools Protocol, Steel browser, noVNC, Xvfb,
+    Orgo (product), Hermes computer_use + browser toolsets.
+    Must cover: persistent logged-in sessions; anti-bot/CAPTCHA reality; takeover UX; RAM per browser/desktop;
+    which pieces run inside the VM vs on the host; security of exposing CDP/VNC.
+  footer: *scout_footer
+
+- key: D4
+  title: "Scout: swarm coordination patterns"
+  assignee: fortress
+  parents: [F0]
+  body: |
+    Question: how should specialised agents coordinate durable work without chat storms, and how does a human steer?
+    Answers Q5, Q9.
+    Seeds: Hermes Kanban + Kanban Swarm v1 (planner → workers → verifier → synthesizer); A2A protocol; CrewAI;
+    LangGraph; Microsoft Agent Framework / AutoGen; supervisor and blackboard patterns; published write-ups of
+    people running 24/7 multi-agent fleets.
+    Must cover: failure modes seen in practice (loops, stalls, token burn, duplicate work, correlated errors);
+    human-in-the-loop designs; observability and cost controls; what works with weaker models.
+  footer: *scout_footer
+
+- key: D5
+  title: "Scout: security, secrets and egress"
+  assignee: fortress
+  parents: [F0]
+  body: |
+    Question: how do we keep agents that read untrusted content from leaking secrets or taking harmful actions?
+    Answers Q7, informs Q1.
+    Seeds: "lethal trifecta" (Simon Willison); OWASP Top 10 for LLM apps; NVIDIA OpenShell policies; host-side
+    credential brokers (strangeClaw pattern, Hermes credential vault); egress proxies (Squid, Stripe Smokescreen);
+    nftables; gVisor (as a non-VM comparison); published Firecracker/KVM escape history.
+    Must cover: where secrets live; per-agent vs per-zone policy; approval UX for irreversible actions; audit
+    logging; what a client's security review would ask for.
+  footer: *scout_footer
+
+- key: D6
+  title: "Scout: commercial landscape and pricing"
+  assignee: market
+  parents: [F0]
+  body: |
+    Question: who already sells agent computers or agent teams, to whom, at what price, deployed how — and where is
+    the gap Norfront could own? Answers Q8, rubric "differentiation".
+    Seeds: Grok Bot (xAI), Orgo, E2B, Daytona, Modal, Browserbase, Anthropic Managed Agents / computer use, OpenAI's
+    agent products, Manus, Lindy, Relevance AI.
+    Must cover: pricing with source URL + date seen; self-host / on-prem / EU data residency options; target customer
+    size; what reviewers and users say they lack. Don't sign up for paid trials (RULES 15).
+  footer: *scout_footer
+
+- key: D7
+  title: "Scout: what users actually want and hate"
+  assignee: market
+  parents: [F0]
+  body: |
+    Question: what do people running Hermes, OpenClaw, Grok Bot and similar systems complain about and ask for?
+    Answers Q4, Q5, Q9 from the user side.
+    Seeds: r/hermesagent and related subreddits; NousResearch/hermes-agent issues + discussions; openclaw/openclaw
+    issues; Hacker News threads on agent sandboxes; X posts by people running agent swarms. A Grok summary claimed
+    these pains: skill bloat, token overhead from loading every tool, memory amnesia, credential leakage across
+    instances, fake "I did it" execution with weak models, fragile multi-agent orchestration — verify or refute
+    each with links.
+    Must cover: quotes with links; how many independent sources per pain; which pains the incumbent already fixed
+    (check changelogs).
+  footer: *scout_footer
+
+# ── Phase 2 · converge ───────────────────────────────────────────────────────
+- key: V1
+  title: Fact-check the registry
+  assignee: verifier
+  parents: [D1, D2, D3, D4, D5, D6, D7]
+  body: |
+    Goal: nothing unverified reaches the proposals.
+    Do: run python3 swarm/tools/verify_candidates.py research/candidates/ --write; check the load-bearing claims
+    (platform, isolation type, persistence, license, price) against source code or official pages; set status
+    verified | unverified | false on every entry; hunt hallucinations and stale projects.
+    Deliver: updated research/candidates/*.yaml, research/verification.md (strikes, corrections, riskiest unknowns).
+    Done when: every entry has a status; merged to main; kanban_complete.
+
+- key: M1
+  title: Map the decision space
+  assignee: lead
+  parents: [V1]
+  body: |
+    Goal: one map every proposer starts from — options, not answers.
+    Deliver: research/landscape.md — for each BRIEF Q1–Q10: viable options (verified ids only), tradeoffs, known
+    unknowns; plus a short "patterns across domains" section. No recommendation.
+    Done when: a proposer could write a full proposal from it without re-scouting; merged; kanban_complete.
+
+- key: P-LEAN
+  title: "Proposal: LEAN architecture"
+  assignee: lean
+  parents: [M1]
+  body: |
+    Goal: the simplest architecture that meets R1–R8 on one MacBook.
+    Deliver: research/proposals/lean.md using swarm/templates/proposal.md, citing verified registry ids.
+    Blind: don't read other proposals or swarm/sealed/. Include your bold bet and kill criteria.
+    Done when: every template section is filled; merged; kanban_complete.
+
+- key: P-FORT
+  title: "Proposal: FORTRESS architecture"
+  assignee: fortress
+  parents: [M1]
+  body: |
+    Goal: the architecture a client's security team would sign off, still meeting R1 on a MacBook.
+    Deliver: research/proposals/fortress.md using swarm/templates/proposal.md, citing verified registry ids.
+    Blind: don't read other proposals or swarm/sealed/. Include your bold bet and kill criteria.
+    Done when: every template section is filled; merged; kanban_complete.
+
+- key: P-MKT
+  title: "Proposal: MARKET architecture"
+  assignee: market
+  parents: [M1]
+  body: |
+    Goal: the architecture that makes Claw easiest to sell and deploy to clients, still meeting R1–R8.
+    Deliver: research/proposals/market.md using swarm/templates/proposal.md, citing verified registry ids.
+    Blind: don't read other proposals or swarm/sealed/. Include your bold bet and kill criteria.
+    Done when: every template section is filled; merged; kanban_complete.
+
+- key: R1
+  title: Red-team all proposals (incl. sealed Proposal Z)
+  assignee: redteam
+  parents: [P-LEAN, P-FORT, P-MKT]
+  body: |
+    Goal: find how each design fails before reality does.
+    Do: follow your SOUL — read research/proposals/*.md, then unseal swarm/sealed/claude-baseline-v0.md as Proposal Z.
+    Deliver: research/redteam.md — per proposal: top 5 failure modes with evidence, R1–R8 + waiver check, rubric
+    scores with one-line justifications; then a steal list for a possible hybrid.
+    Done when: all four proposals covered; merged; kanban_complete.
+
+- key: J1
+  title: Judge and name finalists
+  assignee: lead
+  parents: [R1]
+  body: |
+    Goal: a decision Tomas can make in 10 minutes.
+    Deliver: research/decision-A.md — scoring table (all proposals incl. Z, plus at most one hybrid); 1–2 finalists
+    with why; waiver requests needing Tomas; the bake-off test plan: 5–8 identical tests (what, how measured, pass
+    threshold) that would prove or kill each finalist — covering persistence, isolation/egress, browser + takeover,
+    brain→computer wiring, RAM/boot on the Mac, and one swarm handoff with a human approval.
+    Done when: merged; kanban_complete. Keep it ≤2 pages.
+
+- key: GATE-A
+  title: "Tomas: pick finalists"
+  gate: true
+  parents: [J1]
+  body: |
+    Read research/decision-A.md (and research/redteam.md if scores are close). Comment your pick, any waivers, and
+    changes to the test plan. Approve on the Mac: ./start.sh approve GATE-A "<finalists>"
+
+# ── Phase 3 · bake-off ───────────────────────────────────────────────────────
+- key: T0
+  title: Build the bake-off harness
+  assignee: verifier
+  parents: [GATE-A]
+  body: |
+    Goal: every finalist is measured by the same tests.
+    Deliver: tests/bakeoff/ implementing the decision-A test plan (plus Tomas's changes from GATE-A comments), a
+    results schema (research/bakeoff/<finalist>.json), and a runner that takes a finalist adapter.
+    Done when: harness runs against a stub adapter and reports every test as pass/fail/not-run; merged; kanban_complete.
+
+- key: K1
+  title: "Bake-off: prototype finalist #1"
+  assignee: infra
+  parents: [T0]
+  max_runtime: 4h
+  body: |
+    Goal: the minimum prototype of finalist #1 (from decision-A + GATE-A comments) that the harness can test.
+    Deliver: prototypes/<finalist>/ + its harness adapter; research/bakeoff/<finalist>.json; notes on setup steps,
+    surprises and anything the proposal got wrong.
+    Complete this card yourself with the results — V2 verifies. Don't polish.
+
+- key: K2
+  title: "Bake-off: prototype finalist #2 (or the riskiest alternative)"
+  assignee: platform
+  parents: [T0]
+  max_runtime: 4h
+  body: |
+    Goal: comparative evidence. If GATE-A picked two finalists, prototype #2. If it picked one, prototype the red
+    team's strongest alternative for that finalist's riskiest layer, so the choice is still tested against something.
+    Deliver: prototypes/<name>/ + harness adapter; research/bakeoff/<name>.json; notes.
+    Complete this card yourself with the results — V2 verifies. Don't polish.
+
+- key: V2
+  title: Verify bake-off results
+  assignee: verifier
+  parents: [K1, K2]
+  body: |
+    Goal: the numbers are real.
+    Do: re-run the harness for each prototype from a clean state; compare with reported results; note variance.
+    Deliver: research/bakeoff/verdict.md — per test per prototype: reproduced ✓/✗, numbers, caveats.
+    Done when: merged; kanban_complete.
+
+- key: B0
+  title: Decide, write SPEC.md and the build plan
+  assignee: lead
+  parents: [V2]
+  body: |
+    Goal: turn evidence into a buildable plan.
+    Deliver: research/decision-B.md (≤2 pages: choice, evidence, what we're giving up, open risks); SPEC.md v1
+    (architecture, contracts, acceptance criteria — every choice cites registry ids or bake-off results);
+    swarm/build.yaml following swarm/templates/build-plan-rules.md.
+    Done when: `python3 -c "import yaml; yaml.safe_load(open('swarm/build.yaml'))"` passes and every build card
+    traces to a SPEC section; merged; kanban_complete.
+
+- key: GATE-B
+  title: "Tomas: approve architecture and build plan"
+  gate: true
+  parents: [B0]
+  body: |
+    Read research/decision-B.md, skim SPEC.md and swarm/build.yaml. Comment changes if needed (the lead revises).
+    Approve on the Mac: ./start.sh approve GATE-B "go" — then seed the build: ./start.sh build
