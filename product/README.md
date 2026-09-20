@@ -1,8 +1,8 @@
 # Norfront Claw — Linux cloud product
 
-Prime Agent is the **brain**. Jev Ultrafast is the **browser plugin** in `product/jev/` ([PR #1](https://github.com/tomasbm21/harnesstart/pull/1)). This tree is the Linux-cloud runtime: not Hermes, not Tomas’s Mac, not Remote Control.
+Prime Agent is the **brain**. Jev Ultrafast is the **browser plugin** in `product/jev/` (stacked from [PR #1](https://github.com/tomasbm21/harnesstart/pull/1)). This tree is the Linux-cloud runtime: not Hermes, not Tomas’s Mac, not Remote Control.
 
-This PR owns `product/` **except** `product/jev/` (do not edit that package here).
+This PR contains both `product/claw` and `product/jev/`.
 
 Config is environment-only (`claw.env` plus process env). Keys are never printed.
 
@@ -41,10 +41,10 @@ Live Jev policy reads `TYPESAFE_API_KEY` from **env** (never chat):
 
 `observe` / `guards` / `policy` / `doctor` keep working when that key is unset.
 
-Needs `product/jev` from PR #1 on the same checkout (or merge that branch). Then:
+Live Chrome observe needs the Jev extra once:
 
 ```bash
-cd product/jev && uv sync --extra dev   # once, for live Chrome observe
+cd product/jev && uv sync --extra dev
 ```
 
 ## Layout
@@ -53,7 +53,7 @@ cd product/jev && uv sync --extra dev   # once, for live Chrome observe
 | --- | --- |
 | `product/claw` | Entrypoint |
 | `product/norfront_claw/` | Config, doctor, Prime wrapper, R6 guards, **claw_jev hook** |
-| `product/jev/` | `claw_jev` package (sibling PR; not edited here) |
+| `product/jev/` | `claw_jev` package (dedicated Chrome + Jev Ultrafast) |
 | `product/prime-prompt.md` | Appended to Prime Agent; `--no-context-files` so repo `AGENTS.md` is not loaded |
 | `~/.local/share/norfront-claw/workspace` | Prime Agent cwd (not the harness git tree) |
 
