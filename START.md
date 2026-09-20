@@ -1,6 +1,15 @@
 # START — operator runbook
 
-You're the operator (see AGENTS.md). Everything runs through `./start.sh` on the Mac. It's safe to re-run at any point: finished steps are skipped.
+You're the operator (see AGENTS.md). On Tomas's Mac, everything runs through `./start.sh`. It's safe to re-run at any point: finished steps are skipped.
+
+On **Cursor Linux cloud**, do not run `./start.sh` (it requires Darwin + Lima). Use the product:
+
+```bash
+./product/claw doctor
+./product/claw test
+```
+
+See `product/README.md`. Put keys in `claw.env` yourself; never paste them in chat.
 
 ## What Tomas says → what you run
 
@@ -8,7 +17,7 @@ You're the operator (see AGENTS.md). Everything runs through `./start.sh` on the
 |---|---|---|
 | start / go / run it | `./start.sh` | Relay each `== n/6` step in one line. When it finishes, run `./start.sh status` and summarise. |
 | status / how's it going | `./start.sh status` | Summarise: running, blocked, and gates waiting for him. |
-| check / doctor | `./start.sh doctor` | Report READY, or the exact problems. |
+| check / doctor | Linux: `./product/claw doctor`. Mac: `./start.sh doctor` | Report READY, or the exact problems. |
 | approve GATE-A (or GATE-B) + his note | `./start.sh approve GATE-A "<his exact words>"` | Only when he explicitly says approve. |
 | what's blocked / show me card X | `./start.sh show <card-id or key>` | Explain it in plain words. |
 | answer / reply to a blocked card | `./start.sh answer <card-id> "<his exact words>"` | |

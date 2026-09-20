@@ -6,6 +6,12 @@ Hermes-style agents with Grok Bot–style computers, running on hardware Norfron
 
 ## Start
 
+### Linux cloud
+
+Use `./product/claw` (Prime Agent + Jev hook). See `product/README.md`. `./start.sh` is Darwin/Lima only.
+
+### Mac swarm
+
 1. Put your keys in `claw.env`. The first `./start.sh` creates the file for you.
    - `DEEPSEEK_API_KEY` is required.
    - `WEB_BACKEND` + `WEB_API_KEY` are strongly recommended.
@@ -13,7 +19,7 @@ Hermes-style agents with Grok Bot–style computers, running on hardware Norfron
    - It follows `START.md` and runs `./start.sh`.
    - Or run `./start.sh` yourself.
 
-The first run takes about 20 minutes: it checks the Mac, creates a Linux VM with nested virtualization, installs Hermes, configures 8 agent profiles, seeds 22 cards, checks readiness (including a model ping) and starts the swarm.
+The first Mac run takes about 20 minutes: it checks the Mac, creates a Linux VM with nested virtualization, installs Hermes, configures 8 agent profiles, seeds 22 cards, checks readiness (including a model ping) and starts the swarm.
 
 ```bash
 ./start.sh status                  # progress, blocked cards, gates waiting for you
@@ -60,5 +66,6 @@ host/             Linux VM on the Mac: Lima template, preflight, provisioning
 swarm/            rules, souls, cards, templates, scripts 25–70, approve, verifier tool
 swarm/sealed/     Proposal Z: only the red team and judge open it
 research/         created by the swarm: everything it finds
+product/          Linux-cloud runtime (Prime Agent brain, Jev browser hook)
 ```
 # harnesstart

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Norfront Claw — Linux cloud entrypoint (Prime Agent brain, Jev browser hook).
+# Run from anywhere: ./product/claw doctor
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export CLAW_REPO="${CLAW_REPO:-$ROOT}"
+export PATH="$HOME/.local/bin:$PATH"
+CLAW_PY="$ROOT/product"
+# Sibling-owned package: from claw_jev import ClawJev, observe, check_guards, choose, run, policy_status, doctor
+if [ -d "$ROOT/product/jev/claw_jev" ]; then
+  CLAW_PY="$ROOT/product/jev:$CLAW_PY"
+fi
+# If the Jev PR already ran `uv sync`, reuse that venv's site-packages (jev-ultrafast).
+for site in "$ROOT"/product/jev/.venv/lib/python*/site-packages; do
+  if [ -d "$site" ]; then
+    CLAW_PY="$site:$CLAW_PY"
+  fi
+done
+export PYTHONPATH="$CLAW_PY${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m norfront_claw "$@"

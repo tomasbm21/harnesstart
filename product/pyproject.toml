@@ -1,0 +1,13 @@
+[project]
+name = "norfront-claw"
+version = "0.0.1"
+description = "Norfront Claw Linux runtime: Prime Agent brain plus a Jev browser hook"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "UNLICENSED" }
+
+[project.scripts]
+claw = "norfront_claw.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["norfront_claw*"]
