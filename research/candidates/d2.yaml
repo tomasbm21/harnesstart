@@ -1,0 +1,640 @@
+# D2 agent runtimes (lean lens). Unknown fields: "unknown". status: unverified.
+- id: d2-hermes-agent
+  name: Hermes Agent
+  url: https://github.com/NousResearch/hermes-agent
+  kind: repo
+  domain: D2
+  what_it_is: Nous Research self-hosted agent with memory, self-written skills, Kanban swarm, and pluggable terminal/browser backends.
+  license: MIT
+  last_activity: unknown
+  maintainers: NousResearch
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q3, Q4]
+  fit: strong
+  fit_why: Incumbent already running this swarm; MIT; plugin APIs for terminal backends (SSH/Docker/Daytona/Modal plus third-party providers) so a VM computer can attach without a fork; DeepSeek DSML parser exists in-tree.
+  price: n/a
+  evidence:
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/configuration (7 terminal backends: local, docker, ssh, modal, daytona, vercel_sandbox, singularity)"
+    - "https://hermes-agent.nousresearch.com/docs/developer-guide/terminal-environment-plugin (third-party backends register without touching core)"
+    - "https://github.com/NousResearch/hermes-agent/commit/a32832e06bcfdd67f20220fa1338b9e0383cbac2 (DeepSeek-V4 DSML tool-call fallback parser)"
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/memory"
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban"
+    - "ran: git ls-remote https://github.com/NousResearch/hermes-agent.git HEAD → 639823919ced15640924e905bacab3858c5afd19"
+    - "gh release list: v0.21.3 (v2026.9.14) 2026-09-14; prior tags ~weekly in Aug–Sep 2026"
+  tried: false
+  red_flags:
+    - "Nous Portal / Tool Gateway is a hosted convenience path; not required (OpenAI-compatible base_url works)."
+  found_via: seed
+  status: unverified
+
+- id: d2-openclaw
+  name: OpenClaw
+  url: https://github.com/openclaw/openclaw
+  kind: repo
+  domain: D2
+  what_it_is: Self-hosted gateway + embedded agent runtime with per-agent workspaces, Markdown memory, skills, Docker/Podman/SSH/OpenShell sandboxes, and CDP browsers.
+  license: MIT
+  last_activity: unknown
+  maintainers: OpenClaw Foundation
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q3, Q4]
+  fit: strong
+  fit_why: Full adopt alternative to Hermes; MIT LICENSE file; brain on a Gateway host, tools on Docker/SSH/OpenShell; native DeepSeek thinking+tools docs. Heavier Node/pnpm stack than a single Python daemon.
+  price: n/a
+  evidence:
+    - "https://raw.githubusercontent.com/openclaw/openclaw/main/LICENSE (MIT License, OpenClaw Foundation 2026; GitHub API reports license Other because of extra third-party-notice paragraph)"
+    - "https://docs.openclaw.ai/concepts/agent"
+    - "https://docs.openclaw.ai/sandbox (backends docker, podman, ssh; openshell via plugin)"
+    - "https://docs.openclaw.ai/gateway/sandboxing/ssh-backend (SSH exec/files; browser sandbox not supported on SSH)"
+    - "https://docs.openclaw.ai/tools/browser/remote (remote CDP profiles)"
+    - "https://docs.openclaw.ai/providers/deepseek (replays reasoning_content for V4 thinking+tools)"
+    - "https://github.com/openclaw/openclaw/issues/71435 (V4 thinking 400 on multi-turn tools; comment says main backfills reasoning_content)"
+    - "ran: git ls-remote https://github.com/openclaw/openclaw.git HEAD → fcc927f58d020ea6c6cac50ae2041ab4b68270ed"
+    - "gh release list: v2026.9.5 latest 2026-09-19; calendar-versioned, multiple tags per month"
+  tried: false
+  red_flags:
+    - "SSH backend does not sandbox the browser; CDP is a separate Docker/remote-browser path."
+    - "Daily version check to the Foundation by default; disable via update.checkOnStart."
+  found_via: seed
+  status: unverified
+
+- id: d2-nemoclaw
+  name: NVIDIA NemoClaw
+  url: https://github.com/NVIDIA/NemoClaw
+  kind: repo
+  domain: D2
+  what_it_is: Official NVIDIA reference stack that packages OpenClaw/Hermes/LangChain Deep Agents inside NVIDIA OpenShell sandboxes with a host CLI and versioned blueprints.
+  license: Apache-2.0
+  last_activity: unknown
+  maintainers: NVIDIA
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q3, Q4]
+  fit: partial
+  fit_why: Not a brain — a packaging/plugin layer around OpenClaw or Hermes. Isolation is OpenShell containers (plus optional MicroVM driver on OpenShell), not Claw's R2 hardware-VM computers. Apple Silicon is documented as tested-with-limitations.
+  price: n/a
+  evidence:
+    - "https://github.com/NVIDIA/NemoClaw (org NVIDIA, Apache-2.0; README: supported agents OpenClaw default, Hermes, LangChain Deep Agents Code)"
+    - "https://docs.nvidia.com/nemoclaw/user-guide/openclaw/about/how-it-works (does not replace OpenShell or the chosen agent runtime)"
+    - "https://docs.nvidia.com/nemoclaw/latest/get-started/prerequisites.html (Linux Docker tested; macOS Apple Silicon Colima/Docker Desktop tested with limitations; Docker/k3s nested-overlay workaround)"
+    - "ran: git ls-remote https://github.com/NVIDIA/NemoClaw.git HEAD → f2c0316fc7737ac41974f6d21945f248360dba23"
+    - "gh release list -R NVIDIA/NemoClaw → no release tags as of 2026-09-20"
+  tried: false
+  red_flags:
+    - "README calls the project alpha; no GitHub Releases cadence."
+    - "Default path is Docker/k3s containers, not per-agent hardware VMs."
+    - "Do not confuse with unaffiliated *Claw forks; official source is NVIDIA/NemoClaw."
+  found_via: seed
+  status: unverified
+
+- id: d2-openhands
+  name: OpenHands
+  url: https://github.com/OpenHands/OpenHands
+  kind: repo
+  domain: D2
+  what_it_is: Self-hosted software-engineering agent with a controller process plus Docker (default) or remote sandboxes.
+  license: MIT
+  last_activity: unknown
+  maintainers: OpenHands (repo renamed from All-Hands-AI/OpenHands)
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q3, Q4]
+  fit: partial
+  fit_why: Mature MIT coding agent with Docker isolation, but no Hermes-style skill-learning loop or ops swarm; brain+sandbox split is extra moving parts for non-coding Norfront agents.
+  price: n/a
+  evidence:
+    - "https://github.com/OpenHands/OpenHands (MIT; All-Hands-AI/OpenHands HTTP 301 → this URL)"
+    - "https://docs.openhands.dev/openhands/usage/sandboxes/docker"
+    - "https://docs.openhands.dev/openhands/usage/sandboxes/remote"
+    - "https://github.com/OpenHands/OpenHands/issues/14177 and https://github.com/OpenHands/software-agent-sdk/issues/3267 (DeepSeek V4 reasoning_content 400; SDK comment says PR #2978 / v1.21.0 fix, model-id substring must match deepseek/deepseek-v4-*)"
+    - "ran: git ls-remote https://github.com/OpenHands/OpenHands.git HEAD → a07364828c8f202e7745c6bce3dcef3915ae7ac1"
+    - "gh release list: v1.20.0 2026-09-17; roughly weekly 1.15–1.20 Aug–Sep 2026"
+  tried: false
+  red_flags:
+    - "Remote sandbox API docs still point at managed runtime.all-hands.dev for some paths."
+    - "Gordon Buchan 2026-07 write-up: no skills system / no persistent memory beyond workspace files (https://blog.gordonbuchan.com/blog/index.php/2026/07/12/installing-and-configuring-an-openhands-agent-connected-to-an-llm-inference-service/)."
+  found_via: seed
+  status: unverified
+
+- id: d2-goose
+  name: Goose
+  url: https://github.com/aaif-goose/goose
+  kind: repo
+  domain: D2
+  what_it_is: Local Rust CLI/desktop/API agent with recipes, skills, MCP extensions, optional Dockerized extensions, and ACP serve.
+  license: Apache-2.0
+  last_activity: unknown
+  maintainers: aaif-goose (Block/goose redirects here)
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q3, Q4]
+  fit: partial
+  fit_why: Smallest cheap-to-run general agent besides Hermes; Apache-2.0. No first-class SSH/VM computer backend like Hermes/OpenClaw. DeepSeek thinking+tools has a trail of 400 bugs.
+  price: n/a
+  evidence:
+    - "https://github.com/block/goose HTTP 301 → https://github.com/aaif-goose/goose"
+    - "https://goose-docs.ai/docs/guides/recipes/"
+    - "https://github.com/aaif-goose/goose/issues/9200 (deepseek-v4-pro thinking 400; closed as dup of #8807 / PR #8857)"
+    - "https://github.com/aaif-goose/goose/issues/9675 (streaming still drops reasoning_content on later tool turns)"
+    - "ran: git ls-remote https://github.com/aaif-goose/goose.git HEAD → 2090ad1c65ddb39497601a936a9fe17d66254bfe"
+    - "hands-on 2026-09-20: CONFIGURE=false download_cli.sh → goose 1.51.0 --help (output in research/scouting/d2.md)"
+    - "gh release list: v1.51.0 2026-09-17; ~weekly 1.47–1.51"
+  tried: true
+  red_flags:
+    - "Issue #9675 reports remaining DeepSeek 400s after the earlier preserve-reasoning_content fix."
+  found_via: seed
+  status: unverified
+
+- id: d2-letta
+  name: Letta (letta-ai/letta)
+  url: https://github.com/letta-ai/letta
+  kind: repo
+  domain: D2
+  what_it_is: Historical MemGPT/Letta V1 server repo; README now points current harness source to letta-ai/letta-code.
+  license: Apache-2.0
+  last_activity: unknown
+  maintainers: letta-ai
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q3, Q4]
+  fit: weak
+  fit_why: Seed URL is no longer the live runtime. Adopting this tree would pin Claw to an archive/V1 API the README says is unsupported.
+  price: n/a
+  evidence:
+    - "https://github.com/letta-ai/letta README: current source lives in letta-ai/letta-code; archive branch holds retired V1 API"
+    - "https://github.com/letta-ai/letta/blob/bb52a890/letta/schemas/providers/deepseek.py (older comment: DeepSeek ChatCompletions does not support native function calling — may be stale vs current API)"
+    - "https://github.com/letta-ai/letta/issues/3411 (DeepSeek V4 thinking disabled via pi-ai when reasoning_effort unset)"
+    - "ran: git ls-remote https://github.com/letta-ai/letta.git HEAD → 5bcdd177d70fa2b31a754cfcd801e77b2e1ab16a"
+  tried: false
+  red_flags:
+    - "README: archive branch is unsupported and should not be used in production."
+  found_via: seed
+  status: unverified
+
+- id: d2-hermes-workspace
+  name: Hermes Workspace
+  url: https://github.com/outsourc-e/hermes-workspace
+  kind: repo
+  domain: D2
+  what_it_is: Community web workspace (chat, memory, skills, terminal, swarm UI) that runs on vanilla Hermes without forking it.
+  license: MIT
+  last_activity: unknown
+  maintainers: outsourc-e
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4]
+  fit: partial
+  fit_why: Plugin/UI layer, not a replacement brain. README's v2 zero-fork claim matches the lean adopt-don't-fork instinct.
+  price: n/a
+  evidence:
+    - "https://github.com/outsourc-e/hermes-workspace README: v2 zero-fork on vanilla NousResearch/hermes-agent; Node >=22; MIT"
+    - "ran: git ls-remote https://github.com/outsourc-e/hermes-workspace.git HEAD → c631425d8baa933f8c61d8447040f4ec8b5f571c"
+    - "gh: MIT, pushedAt 2026-09-10, 6650 stars, not archived"
+  tried: false
+  red_flags: []
+  found_via: seed
+  status: unverified
+
+- id: d2-hermes-ai-team
+  name: hermes-ai-team
+  url: https://github.com/smfworks/hermes-ai-team
+  kind: repo
+  domain: D2
+  what_it_is: Agent-consumable guide + templates (SOUL, vault, kanban, rituals) to turn one Hermes install into a named team.
+  license: MIT
+  last_activity: unknown
+  maintainers: SMF Works / Aiona Edge
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4]
+  fit: partial
+  fit_why: Config and operating doctrine on top of Hermes, not a runtime. Cheap to steal patterns from; do not treat as a product to adopt.
+  price: n/a
+  evidence:
+    - "https://github.com/smfworks/hermes-ai-team README (MIT; verified against Hermes as of August 2026; official docs win on conflict)"
+    - "ran: git ls-remote https://github.com/smfworks/hermes-ai-team.git HEAD → 82812ae8a977c3190ae8478d13b16390315710cf"
+    - "gh: 64 stars, pushedAt 2026-08-29"
+  tried: false
+  red_flags:
+    - "Single-maintainer guide; 64 stars."
+  found_via: seed
+  status: unverified
+
+- id: d2-hermes-devcrew
+  name: hermes-devcrew
+  url: https://github.com/must-mohsin1/hermes-devcrew
+  kind: repo
+  domain: D2
+  what_it_is: Packaged Hermes profile distribution (kanban swarm) whose default models are DeepSeek V4 Flash via OpenRouter.
+  license: MIT
+  last_activity: unknown
+  maintainers: must-mohsin1
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4, Q8]
+  fit: weak
+  fit_why: Shows plugin-via-profiles works and that someone already ran DeepSeek-class workers on Hermes Kanban. Archived, 1 star — not a thing to adopt.
+  price: n/a
+  evidence:
+    - "https://github.com/must-mohsin1/hermes-devcrew README: not a framework or a fork; Hermes profiles + kanban swarm; default model deepseek/deepseek-v4-flash"
+    - "gh repo view: isArchived true, 1 star, MIT, pushedAt 2026-06-23"
+    - "ran: git ls-remote https://github.com/must-mohsin1/hermes-devcrew.git HEAD → 86def51134602934e2dd7acab979680cb10ce37d"
+  tried: false
+  red_flags:
+    - "Archived 2026-06; 1 star; OpenRouter key assumed."
+  found_via: seed
+  status: unverified
+
+- id: d2-hermes-agent-team
+  name: hermes-agent-team
+  url: https://github.com/linke-ai/hermes-agent-team
+  kind: repo
+  domain: D2
+  what_it_is: Community Flask/ASGI web hub for multiple Hermes profiles via MCP + ACP + Kanban.
+  license: MIT
+  last_activity: unknown
+  maintainers: linke-ai
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4]
+  fit: weak
+  fit_why: Extra web control plane on Hermes. Maintainer says best-effort only; last push May 2026.
+  price: n/a
+  evidence:
+    - "https://github.com/linke-ai/hermes-agent-team README (community experiment, not official; requires Hermes >=0.12; kanban.dispatch_in_gateway false)"
+    - "ran: git ls-remote https://github.com/linke-ai/hermes-agent-team.git HEAD → 9c1d6b71c8241dbad820eef3228a4f571b9f98f2"
+    - "gh: MIT, 184 stars, pushedAt 2026-05-20, not archived"
+  tried: false
+  red_flags:
+    - "README: limited maintainer time; do not expose unauthenticated to the public internet."
+  found_via: seed
+  status: unverified
+
+- id: d2-awesome-hermes-agents
+  name: awesome-hermes-agents
+  url: https://github.com/frankxai/awesome-hermes-agents
+  kind: repo
+  domain: D2
+  what_it_is: Curated index of Hermes UIs, memory layers, swarm tools, and deploy packs; not a runtime.
+  license: MIT
+  last_activity: unknown
+  maintainers: frankxai
+  runs_on: [unknown]
+  answers: [Q4]
+  fit: weak
+  fit_why: Lead list only. Useful for finding plugins; 3 stars; not something Claw runs.
+  price: n/a
+  evidence:
+    - "https://github.com/frankxai/awesome-hermes-agents README (MIT; not official Nous; lists hermes-workspace among UIs)"
+    - "ran: git ls-remote https://github.com/frankxai/awesome-hermes-agents.git HEAD → 0117e52c59a08070962c22ab5e74e7012e1109f4"
+    - "gh: 3 stars, pushedAt 2026-09-10"
+  tried: false
+  red_flags:
+    - "3 stars; treat entries as leads to re-verify."
+  found_via: seed
+  status: unverified
+
+- id: d2-openshell
+  name: NVIDIA OpenShell
+  url: https://github.com/NVIDIA/OpenShell
+  kind: repo
+  domain: D2
+  what_it_is: Official NVIDIA agent sandbox runtime (gateway + supervisor + YAML policy) with Docker/Podman/MicroVM/Kubernetes compute drivers.
+  license: Apache-2.0
+  last_activity: unknown
+  maintainers: NVIDIA
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q3, Q4]
+  fit: partial
+  fit_why: Strongest off-the-shelf place to run an existing brain (OpenClaw/Hermes/Claude Code/OpenCode) under policy. Brain still comes from elsewhere. MicroVM driver may help R2; default docs emphasize containers.
+  price: n/a
+  evidence:
+    - "https://github.com/NVIDIA/OpenShell README (Apache-2.0; drivers Docker, Podman, MicroVM, Kubernetes)"
+    - "https://docs.nvidia.com/openshell/about/overview"
+    - "https://docs.nvidia.com/openshell/dev/about/how-it-works (CLI, Gateway, Supervisor)"
+    - "ran: git ls-remote https://github.com/NVIDIA/OpenShell.git HEAD → 29e89a2f2289ad538c195e136baaaac2a92a3a2e"
+    - "gh release list: v0.0.116 latest 2026-08-28; 0.0.x tags mid-August 2026"
+  tried: false
+  red_flags:
+    - "0.0.x versioning; NemoClaw docs warn not to self-update OpenShell out-of-band in a NemoClaw install."
+  found_via: 'search:"NVIDIA OpenShell GitHub agent sandbox gateway official"'
+  status: unverified
+
+- id: d2-langchain-deepagents
+  name: LangChain Deep Agents
+  url: https://github.com/langchain-ai/deepagents
+  kind: repo
+  domain: D2
+  what_it_is: Batteries-included LangGraph harness (sub-agents, filesystem, skills, HITL) plus Deep Agents Code CLI; a NemoClaw-supported agent.
+  license: MIT
+  last_activity: unknown
+  maintainers: langchain-ai
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q3, Q4]
+  fit: partial
+  fit_why: Library/harness, not an always-on ops daemon. Production path leans on LangSmith. LangChain family has published DeepSeek reasoning_content tool-loop bugs.
+  price: n/a
+  evidence:
+    - "https://github.com/langchain-ai/deepagents README (MIT; sub-agents, skills, HITL, pluggable filesystem/sandbox)"
+    - "https://github.com/NVIDIA/NemoClaw README lists LangChain Deep Agents Code as a supported agent"
+    - "https://github.com/langchain-ai/langchainjs/issues/10883 (DeepSeek tool-call loop drops reasoning_content → 400)"
+    - "ran: git ls-remote https://github.com/langchain-ai/deepagents.git HEAD → bc3c2935650f8e8a0862d51226d986d842bd3824"
+    - "gh release list: deepagents==0.7.15 2026-09-16; deepagents-code==0.1.71 2026-09-18"
+  tried: false
+  red_flags:
+    - "README security: trust-the-LLM; enforce bounds at sandbox, not the model."
+    - "Going-to-production docs pair with LangSmith (hosted); self-host without it is unknown."
+  found_via: 'search:"NVIDIA NemoClaw official GitHub agent runtime"'
+  status: unverified
+
+- id: d2-aider
+  name: Aider
+  url: https://github.com/Aider-AI/aider
+  kind: repo
+  domain: D2
+  what_it_is: Git-native terminal pair-programming CLI (repo map + edit formats); not a persistent multi-agent OS.
+  license: Apache-2.0
+  last_activity: unknown
+  maintainers: Aider-AI
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4]
+  fit: weak
+  fit_why: Lean coding instrument, not a computer-driving swarm runtime. No SSH/VM computer, no skill-learning loop, no durable multi-agent board.
+  price: n/a
+  evidence:
+    - "https://github.com/Aider-AI/aider (Apache-2.0)"
+    - "https://github.com/Aider-AI/aider/issues/5255 (DeepSeek V4 not in built-in metadata on v0.86.2; user metadata claims supports_function_calling)"
+    - "https://github.com/Aider-AI/aider/pull/5281 (open PR adding V4 model metadata)"
+    - "ran: git ls-remote https://github.com/Aider-AI/aider.git HEAD → 5dc9490bb35f9729ef2c95d00a19ccd30c26339c"
+    - "gh release list: latest official tag v0.86.0 2025-08-09; repo still pushed 2026-05-22"
+  tried: false
+  red_flags:
+    - "Release cadence stalled after v0.86.0 (2025-08); V4 support was still a 2026 issue/PR."
+    - "No independent DeepSeek V4 multi-turn tool-call 400 report found in Aider issues; mark runtime robustness unknown beyond metadata flags."
+  found_via: 'search:"self-hosted coding agent CLI Aider OpenCode Plandex vs agent runtime 2026"'
+  status: unverified
+
+- id: d2-opencode
+  name: OpenCode
+  url: https://github.com/anomalyco/opencode
+  kind: repo
+  domain: D2
+  what_it_is: Open-source coding-agent harness (TUI/desktop/IDE) with sessions, subagents, and many providers.
+  license: MIT
+  last_activity: unknown
+  maintainers: anomalyco (sst/opencode redirects here)
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4]
+  fit: weak
+  fit_why: Excellent coding harness, not an ops-agent OS. DeepSeek V4 thinking+tools 400s were still being patched across 2026 PRs.
+  price: n/a
+  evidence:
+    - "https://github.com/sst/opencode HTTP 301 → https://github.com/anomalyco/opencode (MIT)"
+    - "https://opencode.ai/"
+    - "https://github.com/anomalyco/opencode/issues/24722"
+    - "https://github.com/anomalyco/opencode/issues/25311 (v1.14.31 still 400; complete fix claimed in unmerged PRs)"
+    - "ran: git ls-remote https://github.com/anomalyco/opencode.git HEAD → ebb7b76eca82342642c78645109e865614533827"
+    - "gh release list: v1.18.31 2026-09-14"
+  tried: false
+  red_flags:
+    - "DeepSeek reasoning_content bugs recurred across releases; do not assume main is clean without a retest."
+  found_via: 'search:"self-hosted coding agent CLI Aider OpenCode Plandex vs agent runtime 2026"'
+  status: unverified
+
+- id: d2-mini-swe-agent
+  name: mini-swe-agent
+  url: https://github.com/SWE-agent/mini-swe-agent
+  kind: repo
+  domain: D2
+  what_it_is: Intentionally tiny (~100-line) GitHub-issue coding agent; contrast point for how little harness you need.
+  license: MIT
+  last_activity: unknown
+  maintainers: SWE-agent
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4, Q10]
+  fit: weak
+  fit_why: "Lean extreme: proves a coding loop can be tiny. Missing memory, skills, swarm, remote computers, approvals."
+  price: n/a
+  evidence:
+    - "https://github.com/SWE-agent/mini-swe-agent (MIT; README: radically simple, SWE-bench verified claim)"
+    - "https://arxiv.org/abs/2609.00006 (harness anatomy paper includes Mini-SWE-Agent, Hermes, OpenClaw, OpenCode)"
+    - "ran: git ls-remote https://github.com/SWE-agent/mini-swe-agent.git HEAD → 04d809ceab9df28f9adaed044884180159172930"
+    - "gh release list: v2.4.6 2026-07-23"
+  tried: false
+  red_flags:
+    - "DeepSeek-class tool-calling robustness: unknown (no issue hunt hit a V4 400 report)."
+  found_via: 'search:"Harness Engineering Anatomy Architecture coding agents Mini-SWE-Agent"'
+  status: unverified
+
+- id: d2-smolagents
+  name: smolagents
+  url: https://github.com/huggingface/smolagents
+  kind: repo
+  domain: D2
+  what_it_is: Hugging Face library for code-acting agents; a building block, not an always-on computer runtime.
+  license: Apache-2.0
+  last_activity: unknown
+  maintainers: huggingface
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4]
+  fit: weak
+  fit_why: Adopt-as-library only. No built-in SSH/VM/CDP computers or durable swarm.
+  price: n/a
+  evidence:
+    - "https://github.com/huggingface/smolagents (Apache-2.0; code-acting agents)"
+    - "ran: git ls-remote https://github.com/huggingface/smolagents.git HEAD → 30bb1161095dbae2271e6bc3cc4c219cc3897a57"
+    - "gh release list: v1.26.0 2026-05-29"
+  tried: false
+  red_flags:
+    - "DeepSeek tool-calling reports for this library: unknown."
+  found_via: 'search:"huggingface smolagents self-hosted agent runtime"'
+  status: unverified
+
+- id: d2-temporal
+  name: Temporal
+  url: https://github.com/temporalio/temporal
+  kind: repo
+  domain: D2
+  what_it_is: Durable workflow engine; adjacent pattern for surviving worker crashes by putting LLM/tool I/O in Activities.
+  license: MIT
+  last_activity: unknown
+  maintainers: temporalio
+  runs_on: [unknown]
+  answers: [Q3, Q5]
+  fit: partial
+  fit_why: Not an LLM agent runtime. Useful glue if Claw needs crash-safe tool loops without inventing a board. Extra cluster to run on a 48 GB Mac.
+  price: n/a
+  evidence:
+    - "https://github.com/temporalio/temporal (MIT)"
+    - "https://go.temporal.io/platform-hub/ai-engineering/ai-reference-architecture (LLM/tool calls must be Activities, not Workflows)"
+    - "https://docs.temporal.io/develop/python/integrations/openai-agents"
+    - "ran: git ls-remote https://github.com/temporalio/temporal.git HEAD → ea83bf5f6d85d2e9a6236e948bc56ef36d1aa24a"
+  tried: false
+  red_flags:
+    - "DeepSeek-class tool calling is the agent's problem, not Temporal's; unknown."
+    - "Self-hosting the Temporal server is another daemon on the MacBook RAM budget."
+  found_via: 'search:"Temporal workflow AI agent durable workers LLM tool calling 2026"'
+  status: unverified
+
+- id: d2-erlang-otp
+  name: Erlang/OTP
+  url: https://github.com/erlang/otp
+  kind: repo
+  domain: D2
+  what_it_is: Adjacent-field supervision pattern (supervisor trees, let-it-crash) for isolating failing agent workers.
+  license: Apache-2.0
+  last_activity: unknown
+  maintainers: Ericsson / OTP team
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q3, Q5]
+  fit: weak
+  fit_why: Pattern only. Hermes Kanban already reclaims dead worker PIDs; rewriting the swarm in OTP would be a platform, not a lean glue.
+  price: n/a
+  evidence:
+    - "https://github.com/erlang/otp (Apache-2.0)"
+    - "ran: git ls-remote https://github.com/erlang/otp.git HEAD → 10078218203aa3ac90175c547fb4e7c91a33677c"
+  tried: false
+  red_flags: []
+  found_via: 'search:"Erlang OTP supervisor trees agent process isolation"'
+  status: unverified
+
+- id: d2-letta-code
+  name: Letta Code
+  url: https://github.com/letta-ai/letta-code
+  kind: repo
+  domain: D2
+  what_it_is: Current Letta stateful harness (memory blocks, skill learning, sleeptime dreaming, subagents, optional remote computers).
+  license: Apache-2.0
+  last_activity: unknown
+  maintainers: letta-ai
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q3, Q4]
+  fit: partial
+  fit_why: Best-in-class memory/skill learning among surveyed brains. Remote computers and secrets features require signing in with Letta (R4 tension). Not hardware-VM isolation.
+  price: n/a
+  evidence:
+    - "https://github.com/letta-ai/letta-code README (Apache-2.0; memory/skills/subagents; remote computers require signing in with Letta)"
+    - "https://github.com/letta-ai/letta/issues/3411 (Letta Code / pi-ai DeepSeek V4 thinking disabled unless reasoning_effort set)"
+    - "letta/llm_api/deepseek_client.py on letta-ai/letta fills empty reasoning_content on tool_calls (https://github.com/letta-ai/letta/blob/bb52a890/letta/llm_api/deepseek_client.py)"
+    - "ran: git ls-remote https://github.com/letta-ai/letta-code.git HEAD → 6fa735994a46f1162f7c974ceed2a7fc95d62bb7"
+    - "gh release list: v0.32.14 2026-09-20; multiple tags per week"
+  tried: false
+  red_flags:
+    - "README: remote computers and secrets require Letta login / Letta Cloud."
+    - "No dedicated letta-code issue proving V4 multi-turn tools are fully green; 3411 is a thinking-disable bug."
+  found_via: 'search:"letta-ai letta self-hosted memory skill learning DeepSeek"'
+  status: unverified
+
+- id: d2-pi
+  name: Pi
+  url: https://github.com/earendil-works/pi
+  kind: repo
+  domain: D2
+  what_it_is: MIT agent toolkit (LLM API + agent loop + TUI/coding CLI); OpenClaw's legacy runtime id `pi` normalizes to built-in `openclaw`.
+  license: MIT
+  last_activity: unknown
+  maintainers: earendil-works (badlogic/pi-mono redirects here)
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4]
+  fit: weak
+  fit_why: Coding/TUI loop, not a computer OS. OpenClaw already absorbed the `pi` runtime id — do not adopt Pi separately if adopting OpenClaw.
+  price: n/a
+  evidence:
+    - "https://github.com/badlogic/pi-mono HTTP 301 → https://github.com/earendil-works/pi (MIT)"
+    - "https://docs.openclaw.ai/agent-runtime-architecture (legacy alias pi normalizes to openclaw)"
+    - "https://github.com/deepseek-ai/deepseek-harness/discussions/1850 (pi-ai route and DeepSeek reasoning_content 400)"
+    - "ran: git ls-remote https://github.com/earendil-works/pi.git HEAD → 19451accdeec671c1f4da9eafac8fc270f510ef4"
+  tried: false
+  red_flags:
+    - "Shared pi-ai layer implicated in Letta/DeepSeek thinking bugs (issue 3411)."
+  found_via: 'search:"openclaw agent runtime architecture pi alias"'
+  status: unverified
+
+- id: d2-openai-codex
+  name: Codex CLI
+  url: https://github.com/openai/codex
+  kind: repo
+  domain: D2
+  what_it_is: OpenAI's Apache-2.0 terminal coding agent; OpenClaw can run it as a plugin harness (`codex` runtime id).
+  license: Apache-2.0
+  last_activity: unknown
+  maintainers: openai
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4]
+  fit: weak
+  fit_why: Plugin under OpenClaw, not a self-hosted ops brain. Default model path is OpenAI-shaped; DeepSeek-class robustness unknown.
+  price: n/a
+  evidence:
+    - "https://github.com/openai/codex (Apache-2.0; lightweight coding agent in your terminal)"
+    - "https://github.com/openclaw/openclaw/blob/b8ed2c32/docs/concepts/agent-runtimes.md (bundled Codex harness; agentRuntime.id)"
+    - "ran: git ls-remote https://github.com/openai/codex.git HEAD → 5c5308fc9a9ee789049d646ef11e5400384b9c6f"
+  tried: false
+  red_flags:
+    - "DeepSeek-class tool calling: unknown (no Codex CLI V4 400 report collected this scout)."
+    - "Using it as the brain likely implies OpenAI account/models unless a custom provider is proven."
+  found_via: 'search:"Harness Engineering Anatomy Architecture coding agents Codex OpenClaw"'
+  status: unverified
+
+- id: d2-crush
+  name: Crush
+  url: https://github.com/charmbracelet/crush
+  kind: repo
+  domain: D2
+  what_it_is: Charmbracelet terminal coding agent under Functional Source License (MIT after two years).
+  license: FSL-1.1-MIT
+  last_activity: unknown
+  maintainers: Charmbracelet, Inc.
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4]
+  fit: weak
+  fit_why: FSL competing-use clause fights R4/R5 if Norfront ships a similar agent product to clients.
+  price: n/a
+  evidence:
+    - "https://raw.githubusercontent.com/charmbracelet/crush/main/LICENSE.md (FSL-1.1-MIT; Competing Use excludes substituting commercial products)"
+    - "ran: git ls-remote https://github.com/charmbracelet/crush.git HEAD → e41ae8ee78dafe884eb4f6e18ffd38d3d6d706e5"
+    - "gh: license Other, 28200 stars, pushedAt 2026-09-20"
+  tried: false
+  red_flags:
+    - "Not OSI-permissive until the two-year MIT grant; competing-use restriction."
+  found_via: 'search:"charmbracelet crush agentic coding license FSL"'
+  status: unverified
+
+- id: d2-plandex
+  name: Plandex
+  url: https://github.com/plandex-ai/plandex
+  kind: repo
+  domain: D2
+  what_it_is: Open-source terminal coding agent aimed at large projects; cloud product winding down per 2026 comparison write-ups.
+  license: MIT
+  last_activity: unknown
+  maintainers: plandex-ai
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4]
+  fit: weak
+  fit_why: Coding CLI only. Last GitHub push 2025-10-03 is stale vs 2026-09 scouting.
+  price: n/a
+  evidence:
+    - "https://github.com/plandex-ai/plandex (MIT; gh pushedAt 2025-10-03, 15646 stars)"
+    - "https://theaiagentindex.com/compare/aider-vs-plandex (2026 comparison: Plandex Cloud winding down)"
+    - "ran: git ls-remote https://github.com/plandex-ai/plandex.git HEAD → e2d772072efadbe41d2946d97d79be55532dbab5"
+  tried: false
+  red_flags:
+    - "Stale relative to other 2026 harnesses; DeepSeek V4 reports unknown."
+  found_via: 'search:"self-hosted coding agent CLI Aider OpenCode Plandex vs agent runtime 2026"'
+  status: unverified
+
+- id: d2-swe-agent
+  name: SWE-agent
+  url: https://github.com/SWE-agent/SWE-agent
+  kind: repo
+  domain: D2
+  what_it_is: Princeton/SWE-bench coding agent that runs an LM of choice against a GitHub issue, typically in a containerized repo.
+  license: MIT
+  last_activity: unknown
+  maintainers: SWE-agent
+  runs_on: [macos, nested-apple-silicon]
+  answers: [Q4]
+  fit: weak
+  fit_why: Issue-fixing eval harness, not a persistent ops computer. Mini-SWE-Agent is the leaner sibling.
+  price: n/a
+  evidence:
+    - "https://github.com/SWE-agent/SWE-agent (MIT; NeurIPS 2024)"
+    - "ran: git ls-remote https://github.com/SWE-agent/SWE-agent.git HEAD → 3ea751c087f32b16e039a2233dd6eefecef325d5"
+    - "gh: pushedAt 2026-09-14, 20370 stars"
+  tried: false
+  red_flags:
+    - "DeepSeek-class tool calling: unknown this scout."
+  found_via: 'search:"SWE-agent mini-swe-agent GitHub self-hosted coding agent"'
+  status: unverified
