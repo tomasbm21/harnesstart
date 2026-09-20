@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Norfront Claw — Linux-cloud VM computer (BRIEF R2).
+# Run from anywhere: ./product/vm/claw-vm doctor
+set -euo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m claw_vm "$@"
