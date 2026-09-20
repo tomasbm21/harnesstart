@@ -1,0 +1,607 @@
+# D4 · swarm coordination (fortress lens). status unverified. ≤25.
+# Unknown fields: "unknown". Shape: swarm/templates/candidate.example.yaml
+- id: d4-hermes-kanban
+  name: Hermes Kanban
+  url: https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban
+  kind: repo
+  domain: D4
+  what_it_is: Durable SQLite task board; named profiles as OS-process workers; comments as the inter-agent protocol; humans steer via CLI, slash commands, or dashboard — not by injecting chat into a running turn.
+  license: "MIT"
+  last_activity: 2026-09-20
+  maintainers: NousResearch
+  runs_on: [linux-kvm, macos, unknown]
+  answers: [Q5, Q9]
+  fit: strong
+  fit_why: "Matches R7 (durable handoffs, human visible/steerable) and the Discord fact — work is a row, not an @mention. Isolation is process+DB, not a VM (R2 is out of this domain). Circuit breakers, heartbeats, iteration-budget checkpoint, and auto-block after spawn failures exist in the docs."
+  price: "n/a"
+  evidence:
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban (two surfaces: kanban_* tools vs CLI/dashboard; HITL via comment/unblock; heartbeat + stale reclaim; consecutive-failure circuit breaker)"
+    - "https://github.com/NousResearch/hermes-agent LICENSE MIT; gh repo view pushedAt 2026-09-20"
+  tried: false
+  red_flags:
+    - "Docs warn that linking a support card to the parent it must unblock creates a deadlock; models can still do this."
+    - "kanban is single-host SQLite; sharing one DB across homes collides on the default profile."
+    - "Checkpoint notice near 90% of iteration budget is not a guarantee the model will stop."
+  found_via: seed
+  status: unverified
+
+- id: d4-kanban-swarm-v1
+  name: Kanban Swarm v1
+  url: https://github.com/NousResearch/hermes-agent/blob/main/hermes_cli/kanban_swarm.py
+  kind: repo
+  domain: D4
+  what_it_is: Topology helper on the Kanban kernel — completed root/blackboard, N parallel workers, verifier gated on all workers, synthesizer gated on the verifier. Shared context is JSON comments on the root. Idempotency_key avoids duplicating the graph.
+  license: "MIT"
+  last_activity: 2026-09-20
+  maintainers: NousResearch
+  runs_on: [linux-kvm, macos, unknown]
+  answers: [Q5, Q9]
+  fit: strong
+  fit_why: "Encodes planner→workers→verifier→synthesizer as dependency gates rather than a group chat. Fortress-relevant: verifier is a hard gate; blackboard is append-only comments, not a free-for-all mention storm. Still inherits Kanban's SQLite/single-host limits."
+  price: "n/a"
+  evidence:
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban (Kanban Swarm topology helper; atomic graph commit)"
+    - "https://github.com/NousResearch/hermes-agent/blob/main/hermes_cli/kanban_swarm.py (idempotency recovers existing topology; does not add a second scheduler)"
+    - "https://github.com/NousResearch/hermes-agent/pull/26791"
+  tried: false
+  red_flags:
+    - "hermes binary not present in this environment; swarm CLI not executed here."
+    - "Shared blackboard comments are a common-cause write surface (see d4-terrarium)."
+  found_via: seed
+  status: unverified
+
+- id: d4-a2a
+  name: Agent2Agent (A2A) Protocol
+  url: https://github.com/a2aproject/A2A
+  kind: protocol
+  domain: D4
+  what_it_is: Linux Foundation protocol (Google origin) for opaque agents to SendMessage/GetTask/CancelTask with AgentCard discovery. Complementary to MCP (agent-to-tool). Bindings JSON-RPC, gRPC, HTTP+JSON.
+  license: "Apache-2.0"
+  last_activity: 2026-09-16
+  maintainers: a2aproject / Linux Foundation
+  runs_on: [unknown]
+  answers: [Q5]
+  fit: partial
+  fit_why: Open, self-hosted spec (R4). Task objects and cancel are better than chat pings, but SendMessage can recreate the Discord interrupt pattern if used as the intra-swarm bus. No hardware isolation; auth is declared on AgentCard, enforcement is implementer-defined.
+  price: "n/a"
+  evidence:
+    - "git clone --depth 1 https://github.com/a2aproject/A2A → LICENSE Apache-2.0; git log -1 2026-09-16 docs: update roadmap (#2237)"
+    - "pip install a2a-sdk==1.1.4; import a2a; a2a.types exposes AgentCard, GetTaskRequest, CancelTaskRequest, Message (60 public types)"
+    - "https://github.com/a2aproject/A2A/blob/main/docs/specification.md (ops include SendMessage, GetTask, CancelTask, SubscribeToTask)"
+  tried: true
+  red_flags:
+    - "a2a-db --help failed: CLI extra needs Alembic (`pip install a2a-sdk[db-cli]`)."
+    - "Python AgentCard in 1.1.4 resolved to protobuf a2a_pb2.AgentCard with empty model_fields — SDK shape is easy to misread."
+  found_via: seed
+  status: unverified
+
+- id: d4-crewai
+  name: CrewAI
+  url: https://github.com/crewAIInc/crewAI
+  kind: repo
+  domain: D4
+  what_it_is: Role-playing crew orchestration; Process.hierarchical adds a manager LLM. Per-agent max_iter / max_rpm / max_execution_time; allow_delegation default False. In-process, not a durable board.
+  license: "MIT"
+  last_activity: 2026-09-20
+  maintainers: crewAIInc
+  runs_on: [unknown]
+  answers: [Q5, Q9]
+  fit: weak
+  fit_why: Convenient roles, but coordination is conversation/delegation inside one process — the chat-storm shape. Community + third-party write-ups show max_iter not covering cross-agent loops, and no shared crew budget. AMP/cloud is a vendor plane (R4 tension).
+  price: "unknown"
+  evidence:
+    - "https://docs.crewai.com/concepts/agents (max_iter default 20; allow_delegation default False; max_rpm; respect_context_window summarises instead of stopping)"
+    - "gh repo view crewAIInc/crewAI license MIT, pushedAt 2026-09-20"
+    - "https://community.crewai.com/t/multi-agent-crews-and-runaway-spend-anyone-solved-delegation-without-a-shared-budget-ceiling/7726"
+  tried: false
+  red_flags:
+    - "Per-task iteration counters reset on delegation; crew-level ping-pong can outrun max_iter (documented by operators, not a built-in breaker)."
+    - "Automatic context summarisation (respect_context_window=True) can hide the audit trail a CISO would want."
+  found_via: seed
+  status: unverified
+
+- id: d4-langgraph
+  name: LangGraph
+  url: https://github.com/langchain-ai/langgraph
+  kind: repo
+  domain: D4
+  what_it_is: Pregel-style stateful graph with checkpointers. interrupt() pauses for HITL; resume via Command(resume=…) on the same thread_id. Persistence is first-class; node restarts from the beginning on resume.
+  license: "MIT"
+  last_activity: 2026-09-20
+  maintainers: LangChain Inc
+  runs_on: [unknown]
+  answers: [Q5, Q9]
+  fit: partial
+  fit_why: Durable HITL and time-travel match R6/R7 better than chat. Library is MIT/self-hostable. Official Agent Server / standalone deploy docs require LANGGRAPH_CLOUD_LICENSE_KEY and beacon egress — a hosted-control-plane smell for R4 if you adopt their production runtime rather than the library.
+  price: "unknown"
+  evidence:
+    - "https://docs.langchain.com/oss/python/langgraph/interrupts (interrupt + persistent checkpointer; node replay on resume)"
+    - "https://www.langchain.com/blog/making-it-easier-to-build-human-in-the-loop-agents-with-interrupt"
+    - "https://docs.langchain.com/langsmith/deploy-standalone-server (LANGGRAPH_CLOUD_LICENSE_KEY; egress to beacon.langchain.com)"
+    - "gh repo view langchain-ai/langgraph license MIT, pushedAt 2026-09-20"
+  tried: false
+  red_flags:
+    - "Interrupt replays the whole node — side effects before interrupt must be idempotent or they double-fire."
+    - "Production Agent Server license/beacon is not the same as the MIT library."
+  found_via: seed
+  status: unverified
+
+- id: d4-microsoft-agent-framework
+  name: Microsoft Agent Framework
+  url: https://github.com/microsoft/agent-framework
+  kind: repo
+  domain: D4
+  what_it_is: Successor unification of AutoGen + Semantic Kernel. Workflows (BSP supersteps) plus MagenticBuilder with max_round_count, max_stall_count, max_reset_count and optional plan review (HITL).
+  license: "MIT"
+  last_activity: 2026-09-18
+  maintainers: Microsoft
+  runs_on: [unknown]
+  answers: [Q5, Q9]
+  fit: partial
+  fit_why: "Stall/reset counters are the right *kind* of control (infrastructure, not a prompt). Group Chat pattern is the Discord failure mode. Docs and samples lean Azure/Foundry; third-party models allowed at user risk. Superstep barriers can stall the whole graph behind one slow executor."
+  price: "n/a"
+  evidence:
+    - "https://learn.microsoft.com/en-us/agent-framework/workflows/orchestrations/magentic (max_stall_count, max_reset_count, enable_plan_review)"
+    - "https://learn.microsoft.com/en-us/agent-framework/workflows/workflows (Pregel supersteps; fan-out waits for the slowest path)"
+    - "gh repo view microsoft/agent-framework license MIT, pushedAt 2026-09-18"
+  tried: false
+  red_flags:
+    - "README warns third-party servers/models are user-risk / Non-Microsoft Products."
+    - "Magentic manager is LLM-driven — expensive and brittle on DeepSeek-class tool calling (R8)."
+  found_via: seed
+  status: unverified
+
+- id: d4-autogen
+  name: AutoGen (Microsoft)
+  url: https://github.com/microsoft/autogen
+  kind: repo
+  domain: D4
+  what_it_is: Original multi-agent programming framework; MagenticOneGroupChat uses a ledger orchestrator with max_stalls (default 3) and max_turns (default 20). GitHub reports last push 2026-04-15.
+  license: CC-BY-4.0
+  last_activity: 2026-04-15
+  maintainers: Microsoft
+  runs_on: [unknown]
+  answers: [Q5, Q9]
+  fit: weak
+  fit_why: Group-chat default is the interrupt/token-burn shape. Successor is Agent Framework / AG2. Repo LICENSE fetched via gh is Creative Commons Attribution 4.0 — not a software-OSI license; code-package SPDX is unknown. Last push ~5 months before this scout.
+  price: "n/a"
+  evidence:
+    - "gh repo view microsoft/autogen licenseInfo CC-BY-4.0, pushedAt 2026-04-15, isArchived false"
+    - "gh api repos/microsoft/autogen/contents/LICENSE → CC BY 4.0 International header"
+    - "https://github.com/microsoft/autogen/blob/027ecf0a/python/packages/autogen-agentchat/src/autogen_agentchat/teams/_group_chat/_magentic_one/_magentic_one_group_chat.py (max_stalls=3, max_turns=20)"
+  tried: false
+  red_flags:
+    - "Root LICENSE is CC-BY-4.0; do not assume MIT from memory."
+    - "Maintenance-mode / successor split (Agent Framework + AG2) — picking this as v1 control plane is a trap."
+  found_via: seed
+  status: unverified
+
+- id: d4-supervisor-pattern
+  name: Supervisor / Magentic-One orchestrator
+  url: https://learn.microsoft.com/en-us/agent-framework/workflows/orchestrations/magentic
+  kind: pattern
+  domain: D4
+  what_it_is: Hub-and-spoke — a manager plans, delegates to specialists, tracks a progress ledger, replans on stall, synthesises. No worker-to-worker chat by default.
+  license: "unknown"
+  last_activity: unknown
+  maintainers: "unknown"
+  runs_on: [unknown]
+  answers: [Q5, Q9]
+  fit: partial
+  fit_why: "Avoids peer @mentions. Failure modes concentrate in the hub (correlated routing errors, token burn, stall loops). Needs hard max_round/stall/reset *outside* the model. Weak models as manager fail closed badly (wrong specialist, duplicate work)."
+  price: "n/a"
+  evidence:
+    - "https://learn.microsoft.com/en-us/agent-framework/workflows/orchestrations/magentic (progress ledger; consecutive non-progress increments stall counter; reset/replan)"
+    - "https://www.thepowerplatformcave.com/agent-architecture-patterns-microsoft-foundry-fabric/ (Magentic vs Sequential cost split)"
+    - "https://arxiv.org/html/2503.13657 (MAST FC2 misalignment under orchestrated MAS)"
+  tried: false
+  red_flags:
+    - "Single manager is a single point of prompt-injection and of token burn."
+    - "Replan-on-stall can itself loop unless max_reset_count is enforced in code."
+  found_via: seed
+  status: unverified
+
+- id: d4-blackboard-pattern
+  name: Blackboard (shared structured state)
+  url: https://arxiv.org/html/2510.14312v1
+  kind: pattern
+  domain: D4
+  what_it_is: Agents coordinate by reading/writing a shared store (Hearsay-II lineage) instead of paging each other. Hermes Swarm v1 stores the blackboard as JSON comments on the root card.
+  license: "unknown"
+  last_activity: unknown
+  maintainers: "unknown"
+  runs_on: [unknown]
+  answers: [Q5]
+  fit: partial
+  fit_why: Right shape to stop chat storms (Tomas's Discord failure). Fortress lens — one poisoned write is topology-wide correlated error. Needs authenticated, schema-checked, versioned writes and a verifier who does not blindly trust the board.
+  price: "n/a"
+  evidence:
+    - "https://arxiv.org/html/2510.14312v1 Terrarium (blackboard as MAS playground; poisoning / misalignment / context-overflow attacks)"
+    - "https://latenteval.ai/research/multi-agent-orchestration-patterns (blackboard = widest fault correlation)"
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban (swarm blackboard as structured JSON comments)"
+  tried: false
+  red_flags:
+    - "Shared mutable memory is a common-cause failure domain; treat writes as untrusted."
+  found_via: seed
+  status: unverified
+
+- id: d4-dcode-ops-fleet
+  name: dcode-ops 7-agent 24/7 fleet write-up
+  url: https://ai-agent-builder.ai/blog/how-we-run-7-ai-agents-for-37-euros-a-month
+  kind: product
+  domain: D4
+  what_it_is: Operator post claiming seven always-on agents on a Hetzner VPS, model-tier routing (incl. DeepSeek as workhorse), a Sentinel that validates proposals against rules, nightly memory distillation, and a $50/day cap.
+  license: "unknown"
+  last_activity: unknown
+  maintainers: "unknown"
+  runs_on: [unknown]
+  answers: [Q5, Q9]
+  fit: partial
+  fit_why: Pattern to steal — tiered models, independent rule-checker, hard spend cap, memory prune — even if the EUR numbers stay unverified. Sentinel-as-gate is fortress-aligned. Not a reusable OSS component.
+  price: "unknown"
+  evidence:
+    - "https://ai-agent-builder.ai/blog/how-we-run-7-ai-agents-for-37-euros-a-month (DeepSeek V3.2 workhorse claim; Sentinel 9-rule check; memory distillation; $50 daily cap)"
+  tried: false
+  red_flags:
+    - "Single-author ops blog; costs and 24/7 reliability not independently measured."
+  found_via: seed
+  status: unverified
+
+- id: d4-mast
+  name: MAST (Why Do Multi-Agent LLM Systems Fail?)
+  url: https://arxiv.org/abs/2503.13657
+  kind: paper
+  domain: D4
+  what_it_is: Empirically grounded taxonomy of 14 MAS failure modes in 3 clusters (spec/design, inter-agent misalignment, verification). MAST-Data 1600+ traces across 7 frameworks; κ=0.88. Covers step repetition, stalls, withheld info, fake verification.
+  license: "unknown"
+  last_activity: 2025-07-23
+  maintainers: "unknown"
+  runs_on: [unknown]
+  answers: [Q5, Q9]
+  fit: strong
+  fit_why: Load-bearing evidence for Claw's swarm rubric — do not invent failure modes. CodeLlama/Qwen traces are in the dataset (R8). Companion GitHub has no LICENSE file (gh licenseInfo null).
+  price: "n/a"
+  evidence:
+    - "https://arxiv.org/html/2503.13657 and NeurIPS 2025 PDF (14 modes; FC1–FC3; step repetition prominent)"
+    - "gh repo view multi-agent-systems-failure-taxonomy/MAST pushedAt 2025-07-23, licenseInfo null"
+    - "https://huggingface.co/datasets/mcemri/MAST-Data (1642 traces; Qwen and CodeLlama included)"
+  tried: false
+  red_flags:
+    - "No LICENSE on the GitHub repo; LLM-as-judge annotations dominate the big dataset (human-labelled file is tiny)."
+  found_via: 'search:"multi-agent LLM failure modes loops stalls duplicate work correlated errors MAST"'
+  status: unverified
+
+- id: d4-temporal
+  name: Temporal (durable execution)
+  url: https://github.com/temporalio/temporal
+  kind: repo
+  domain: D4
+  what_it_is: "Wildcard. Workflows as the durable brain; Activities for LLM/tool I/O; Signals/Updates/Queries for HITL. wait_condition can block days at zero worker-thread cost. Full event history is the audit log."
+  license: "MIT"
+  last_activity: 2026-09-20
+  maintainers: Temporal Technologies
+  runs_on: [linux-kvm, unknown]
+  answers: [Q5, Q9]
+  fit: partial
+  fit_why: Wildcard — this is how grown-up systems wait for a human without polling chat. Strong R6/R7 durability. Ops weight (DB, workers) fights R1 MacBook. LLM calls as Activities retry by default — can multiply token burn unless retry policy is capped.
+  price: "n/a"
+  evidence:
+    - "https://docs.temporal.io/ai-cookbook/human-in-the-loop-python (Signal approval; durable timer; audit trail)"
+    - "https://go.temporal.io/platform-hub/ai-engineering/ai-reference-architecture (Workflow never calls LLM directly)"
+    - "gh repo view temporalio/temporal license MIT, pushedAt 2026-09-20"
+  tried: false
+  red_flags:
+    - "Default Activity retries + a looping agent = unbounded spend unless RetryPolicy/timeouts are explicit."
+    - "Self-hosted production wants an external DB; RAM on a nested Mac VM is unknown."
+  found_via: 'search:"Temporal workflow AI agents human-in-the-loop durable execution 2025"'
+  status: unverified
+
+- id: d4-wikipedia-talk
+  name: Wikipedia talk pages
+  url: https://en.wikipedia.org/wiki/Help:Talk_pages
+  kind: pattern
+  domain: D4
+  what_it_is: Wildcard. Global-scale async coordination — signed, indented, permalinked discussion attached to the artefact, not a live interrupt. Consensus via talk; the article is the board; archives keep the working set small.
+  license: CC-BY-SA-4.0
+  last_activity: unknown
+  maintainers: Wikimedia
+  runs_on: [unknown]
+  answers: [Q5]
+  fit: partial
+  fit_why: "Exact analogue of 'comment on the card, do not @mention the running worker'. Also shows failure modes Claw will hit — edit wars, fragmented forks, treating silence as consent. Human steers by writing on the talk page; bots do not page editors mid-edit."
+  price: "n/a"
+  evidence:
+    - "https://en.wikipedia.org/wiki/Help:Talk_pages (Reply tool notifications; permalink IDs; archives)"
+    - "https://en.wikipedia.org/wiki/Wikipedia:Talk_page_guidelines (one discussion location; do not fork)"
+    - "https://en.wikipedia.org/wiki/Wikipedia:Consensus"
+  tried: false
+  red_flags:
+    - "{{reply to}} / pings *do* notify — the interrupt exists, but it is opt-in and off the work surface."
+  found_via: 'search:"Wikipedia talk pages coordination without interrupting editors async consensus"'
+  status: unverified
+
+- id: d4-mission-command-c2
+  name: Mission command / C2 (human on the loop)
+  url: https://www.usmcu.edu/Outreach/Marine-Corps-University-Press/MCU-Journal/JAMS-vol-11-no-1/Automation-and-the-Future-of-Command-and-Control/
+  kind: paper
+  domain: D4
+  what_it_is: Wildcard. Military C2 — commander's intent + subordinate initiative (mission command). OODA; humans stay on the Decide step while machines accelerate Observe/Orient/Act. In/on/off-the-loop is an explicit autonomy grade.
+  license: "unknown"
+  last_activity: unknown
+  maintainers: "unknown"
+  runs_on: [unknown]
+  answers: [Q5, Q9]
+  fit: partial
+  fit_why: Blueprint for Tomas-as-commander — intent and irreversible-action gates, not micromanaging every tool call. Automation bias is the documented failure (rubber-stamp HITL). Maps to R6 grades.
+  price: "n/a"
+  evidence:
+    - "https://www.usmcu.edu/Outreach/Marine-Corps-University-Press/MCU-Journal/JAMS-vol-11-no-1/Automation-and-the-Future-of-Command-and-Control/ (human on the loop for Decide)"
+    - "https://arl.devcom.army.mil/wp-content/uploads/sites/3/ARl-TN-1303.pdf (AI-integrated C2 ops process)"
+    - "https://tdhj.org/blog/post/ai-military-decision-making-2/ (mission command + OODA)"
+  tried: false
+  red_flags:
+    - "HITL that only rubber-stamps is worse than a hard deny-by-default gate."
+  found_via: 'search:"military command and control OODA loop human in the loop mission command AI agents"'
+  status: unverified
+
+- id: d4-fix-matching
+  name: FIX session + matching-engine idempotency
+  url: https://www.onechronos.com/documentation/fix/primer/
+  kind: protocol
+  domain: D4
+  what_it_is: Wildcard. Ordered, once-and-only-once processing via MsgSeqNum, ResendRequest, PossDupFlag; application-level ClOrdID uniqueness rejects duplicate orders. Matching units process in sequence; behind-sequence is logout, not a retry storm.
+  license: "unknown"
+  last_activity: unknown
+  maintainers: "unknown"
+  runs_on: [unknown]
+  answers: [Q5, Q9]
+  fit: partial
+  fit_why: Duplicate-work and replay are solved with sequence numbers + idempotency keys, not conversation. Maps onto Kanban idempotency_key and 'do not re-dispatch a claimed card'. Human SequenceReset-Reset is last-resort, like Tomas's kill switch.
+  price: "n/a"
+  evidence:
+    - "https://www.onechronos.com/documentation/fix/primer/ (at-least-once delivery, once-and-only-once processing; MsgSeqNum)"
+    - "https://www.cboe.com/document/tech-spec/document/technical-specifications/cboe-titanium-u.s.-equities-fix-specification (behind-sequence → logout; SequenceReset-Reset only by human intervention)"
+    - "https://forum.fixtrading.org/t/clientorderid-tag-11-validations/5207 (duplicate ClOrdID reject)"
+  tried: false
+  red_flags:
+    - "Venue specs differ; this is a pattern steal, not a library to vendor."
+  found_via: 'search:"stock exchange matching engine order book FIX protocol sequence numbers idempotency coordination"'
+  status: unverified
+
+- id: d4-anthropic-mas
+  name: Anthropic multi-agent research system
+  url: https://www.anthropic.com/engineering/multi-agent-research-system
+  kind: paper
+  domain: D4
+  what_it_is: "Production orchestrator-worker Research feature. Token use explains 80% of BrowseComp variance; MAS ≈15× chat tokens. Early agents spawned 50 subagents, duplicated searches, and distracted each other with excessive updates. Filesystem artefacts to avoid telephone-game."
+  license: "n/a"
+  last_activity: 2025-06-13
+  maintainers: Anthropic
+  runs_on: [cloud-only]
+  answers: [Q5, Q9]
+  fit: partial
+  fit_why: "Best published cost/failure write-up. Directly corroborates Discord @mention storms ('excessive updates') and duplicate work from vague delegation. Hosted Claude; not adoptable as control plane (R4). Steal the guards — effort scaling, explicit subtask contracts, tracing, rainbow deploys."
+  price: "unknown"
+  evidence:
+    - "https://www.anthropic.com/engineering/multi-agent-research-system (15× tokens; 90.2% internal eval; duplication example; synchronous subagent bottleneck; full tracing)"
+  tried: false
+  red_flags:
+    - "Results are Claude-frontier; R8 forbids assuming the same reliability on DeepSeek."
+  found_via: 'search:"Anthropic multi-agent research system lessons learned token cost"'
+  status: unverified
+
+- id: d4-langfuse
+  name: Langfuse
+  url: https://github.com/langfuse/langfuse
+  kind: repo
+  domain: D4
+  what_it_is: Self-hostable LLM/agent tracing, token+cost tracking, evals. Core MIT; ee/ directories are a commercial Enterprise license (audit logs, SCIM, retention).
+  license: MIT (core); EE commercial
+  last_activity: 2026-09-20
+  maintainers: Langfuse GmbH
+  runs_on: [linux-kvm, unknown]
+  answers: [Q9]
+  fit: partial
+  fit_why: Swarm observability Tomas can actually look at. Open-core — fortress audit-log features sit in EE. Still preferable to a required SaaS control plane if core tracing is enough for v1.
+  price: "unknown"
+  evidence:
+    - "https://github.com/langfuse/langfuse/blob/main/LICENSE (MIT outside ee/; EE license in ee/LICENSE)"
+    - "https://langfuse.com/docs/observability/features/token-and-cost-tracking"
+    - "https://langfuse.com/self-hosting/license-key (EE list includes audit logs)"
+    - "gh repo view langfuse/langfuse license Other, pushedAt 2026-09-20"
+  tried: false
+  red_flags:
+    - "CISO-grade audit logging may require a paid EE key — check before promising it."
+  found_via: 'search:"OpenTelemetry genai semantic conventions Langfuse LiteLLM agent token budget self-hosted"'
+  status: unverified
+
+- id: d4-litellm
+  name: LiteLLM (proxy / gateway)
+  url: https://github.com/BerriAI/litellm
+  kind: repo
+  domain: D4
+  what_it_is: OpenAI-compatible proxy over many providers with spend tracking, budgets, load balancing, logging. Core MIT; enterprise/ directory separately licensed. Natural place to enforce a swarm-wide token ceiling the LLM cannot talk its way around.
+  license: MIT (core); enterprise/ separate
+  last_activity: 2026-09-20
+  maintainers: BerriAI
+  runs_on: [linux-kvm, unknown]
+  answers: [Q9]
+  fit: partial
+  fit_why: Cost control belongs in the gateway (CrewAI community conclusion). Fits R8 (DeepSeek via one endpoint) and R9. Open-core. Does not by itself stop agent loops — it can only cut the card when spend trips.
+  price: "n/a"
+  evidence:
+    - "https://github.com/BerriAI/litellm/blob/main/LICENSE (MIT outside enterprise/)"
+    - "https://langfuse.com/integrations/gateways/litellm"
+    - "https://www.splunk.com/en_us/blog/artificial-intelligence/observability-challenges-in-multi-agentic-environments.html (LiteLLM as pragmatic metrics layer)"
+    - "gh repo view BerriAI/litellm license Other, pushedAt 2026-09-20"
+  tried: false
+  red_flags:
+    - "Budgets that return retryable errors become another loop; deny must be terminal."
+    - "enterprise/ licensed separately."
+  found_via: 'search:"OpenTelemetry genai semantic conventions Langfuse LiteLLM agent token budget self-hosted"'
+  status: unverified
+
+- id: d4-terrarium
+  name: Terrarium (blackboard attack study)
+  url: https://arxiv.org/html/2510.14312v1
+  kind: paper
+  domain: D4
+  what_it_is: "ICLR 2026 withdrawn/submission study that reuses blackboard MAS to test misalignment, malicious agents, compromised comms, poisoned data. Reported 100% on a privacy query attack and on context-overflow in their scenarios."
+  license: "unknown"
+  last_activity: unknown
+  maintainers: "unknown"
+  runs_on: [unknown]
+  answers: [Q5, Q7]
+  fit: strong
+  fit_why: "Fortress evidence that the coordination fabric *is* an attack surface. A Claw blackboard/kanban.db that any worker can comment on is Terrarium's threat model. Pair with D5; do not treat board writes as trusted."
+  price: "n/a"
+  evidence:
+    - "https://arxiv.org/html/2510.14312v1 (blackboard + MCP; poisoning / overflow)"
+    - "https://openreview.net/forum?id=bknuCt8MI7 (withdrawn ICLR 2026 submission listing)"
+  tried: false
+  red_flags:
+    - "OpenReview lists the ICLR 2026 submission as withdrawn — treat numbers as unverified until a camera-ready appears."
+    - "100% ASR is scenario-specific, not a universal law."
+  found_via: 'search:"blackboard architecture multi-agent LLM shared state poisoning correlated errors"'
+  status: unverified
+
+- id: d4-ag2
+  name: AG2
+  url: https://github.com/ag2ai/ag2
+  kind: repo
+  domain: D4
+  what_it_is: Community continuation of AutoGen. Apache-2.0. context.input + hitl_hook pause a run for a person (CLI/UI/queue). Multi-agent conversation patterns remain core.
+  license: "Apache-2.0"
+  last_activity: 2026-09-20
+  maintainers: ag2ai
+  runs_on: [unknown]
+  answers: [Q5]
+  fit: partial
+  fit_why: Actively maintained, OSI license, explicit HITL hook. Still conversation-shaped — easy to rebuild Discord storms. ag2-classic/autogen package is maintenance-only.
+  price: "n/a"
+  evidence:
+    - "gh repo view ag2ai/ag2 license Apache-2.0, pushedAt 2026-09-20"
+    - "https://github.com/ag2ai/ag2 README (hitl_hook; context.input)"
+    - "https://github.com/ag2ai/ag2-classic (classic autogen package; security/critical fixes only)"
+  tried: false
+  red_flags:
+    - "HITL that is a blocking CLI prompt is not durable across process death (contrast Temporal/Restate/LangGraph interrupt)."
+  found_via: 'search:"AG2 AutoGen community GitHub license Restate durable agents human approval"'
+  status: unverified
+
+- id: d4-restate
+  name: Restate
+  url: https://github.com/restatedev/restate
+  kind: repo
+  domain: D4
+  what_it_is: Durable handlers, awakeables/signals for HITL that survive restarts, suspend-with-no-compute while waiting. Docs warn agent SDKs' Promise.all/asyncio.gather breaks replay determinism.
+  license: BUSL-1.1
+  last_activity: 2026-09-18
+  maintainers: Restate Software
+  runs_on: [linux-kvm, unknown]
+  answers: [Q5, Q9]
+  fit: weak
+  fit_why: Technically close to Temporal for agent HITL. BSL is not OSI open source (R4 fail unless waived). Change license Apache-2.0 after the stated date. SDKs claimed MIT; runtime is the restriction.
+  price: "unknown"
+  evidence:
+    - "https://github.com/restatedev/restate/blob/main/LICENSE (Business Source License 1.1; Change License Apache-2.0; no Public Restate Platform Service)"
+    - "https://docs.restate.dev/ai/patterns/human-in-the-loop"
+    - "https://docs.restate.dev/ai/sdk-integrations/integration-guide (disable SDK parallelism for replay)"
+    - "gh repo view restatedev/restate license Other, pushedAt 2026-09-18"
+  tried: false
+  red_flags:
+    - "R4 — BSL is not an OSI license; waiver required to ship as a required Claw component."
+  found_via: 'search:"AG2 AutoGen community GitHub license Restate durable agents human approval"'
+  status: unverified
+
+- id: d4-otel-genai
+  name: OpenTelemetry GenAI semantic conventions
+  url: https://github.com/open-telemetry/semantic-conventions
+  kind: protocol
+  domain: D4
+  what_it_is: "Vendor-neutral gen_ai.* attributes (agent.id, usage.input_tokens, usage.output_tokens, provider.name). Lets Claw emit traces to any OTLP backend without a hosted control plane."
+  license: "Apache-2.0"
+  last_activity: 2026-09-20
+  maintainers: OpenTelemetry
+  runs_on: [unknown]
+  answers: [Q9]
+  fit: strong
+  fit_why: R4-friendly observability contract. Does not enforce budgets — pair with a gateway. Splunk notes no ratified agent-step schema yet; conventions are evolving (Development status on some attributes).
+  price: "n/a"
+  evidence:
+    - "https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/registry/attributes/gen-ai.md (gen_ai.agent.id, gen_ai.usage.input_tokens)"
+    - "gh repo view implied via git ls-remote open-telemetry/semantic-conventions refs/heads/main exists"
+    - "https://www.splunk.com/en_us/blog/artificial-intelligence/observability-challenges-in-multi-agentic-environments.html (OTel useful; no widely ratified agentic schema)"
+  tried: false
+  red_flags:
+    - "Attribute stability is mixed (Development); do not treat the schema as frozen."
+  found_via: 'search:"OpenTelemetry genai semantic conventions Langfuse LiteLLM agent token budget self-hosted"'
+  status: unverified
+
+- id: d4-openclaw-factory
+  name: OpenClaw Factory 33-agent write-up
+  url: https://blog.bunnyhoneyclub.com/posts/openclaw-factory-what-we-learned-running-33-autonomous-agents
+  kind: product
+  domain: D4
+  what_it_is: "Six-month ops post — 33 narrow-charter Claude agents, reversal 4.1%, re-prompt 11%, memory p95 6.1K tokens. Lesson — build the dashboard first; charter narrowness beats a smarter generalist."
+  license: "unknown"
+  last_activity: unknown
+  maintainers: "unknown"
+  runs_on: [unknown]
+  answers: [Q5, Q9]
+  fit: partial
+  fit_why: Independent 24/7-fleet anecdote matching R7 roster shape (narrow specialists). Metrics are self-reported. Claude-hosted, not DeepSeek (R8). Steal — reversal rate as a KPI, not more agents.
+  price: "unknown"
+  evidence:
+    - "https://blog.bunnyhoneyclub.com/posts/openclaw-factory-what-we-learned-running-33-autonomous-agents (reversal 4.1%; observability-first lesson)"
+  tried: false
+  red_flags:
+    - "Unverified single-shop metrics; name collision with OpenClaw products — treat as a blog, not a vendor."
+  found_via: 'search:"24/7 multi-agent fleet production write-up cost control observability 2025"'
+  status: unverified
+
+- id: d4-airflow
+  name: Apache Airflow
+  url: https://github.com/apache/airflow
+  kind: repo
+  domain: D4
+  what_it_is: "Wildcard. DAG scheduler plus Airflow 3.3 HITLOperator — tasks park in awaiting_input (no worker slot) until UI/API response or response_timeout. Humans also clear/retry/mark from Grid View."
+  license: "Apache-2.0"
+  last_activity: 2026-09-20
+  maintainers: Apache Software Foundation
+  runs_on: [linux-kvm, unknown]
+  answers: [Q5, Q9]
+  fit: weak
+  fit_why: Proven human steering of durable work without chat. HITL wait is the right shape. Heavy for a MacBook (R1). Steal awaiting_input + timeout, do not adopt as the agent runtime.
+  price: "n/a"
+  evidence:
+    - "https://airflow.apache.org/docs/apache-airflow/stable/tutorial/hitl.html (awaiting_input; no worker slot while waiting; UI/API resume)"
+    - "gh repo view apache/airflow license Apache-2.0, pushedAt 2026-09-20"
+  tried: false
+  red_flags:
+    - "Scheduler+metadata DB RAM on nested Apple Silicon is unknown — likely hostile to R1."
+  found_via: 'search:"Apache Airflow DAG human clear task retry SLA sensor durable workflow UI"'
+  status: unverified
+
+- id: d4-otp-supervisor
+  name: Erlang/OTP supervision trees
+  url: https://www.erlang.org/docs/28/apps/stdlib/supervisor.html
+  kind: pattern
+  domain: D4
+  what_it_is: Wildcard. Let-it-crash workers under supervisors. If more than intensity (MaxR) restarts occur within period (MaxT) seconds, the supervisor shuts down all children and itself. Defaults intensity=1, period=5s.
+  license: "Apache-2.0"
+  last_activity: 2026-09-19
+  maintainers: Ericsson / OTP team
+  runs_on: [linux-kvm, macos, unknown]
+  answers: [Q5, Q9]
+  fit: partial
+  fit_why: Fortress reliability — loop/crash containment as process policy, not a prompt. Maps to Hermes dispatcher failure_limit. Restarts do not fix a persistently down dependency (need a circuit breaker, not infinite MaxR).
+  price: "n/a"
+  evidence:
+    - "https://www.erlang.org/docs/28/apps/stdlib/supervisor.html (intensity/period; shutdown if MaxR exceeded in MaxT; defaults 1/5s)"
+    - "gh repo view erlang/otp license Apache-2.0, pushedAt 2026-09-19"
+  tried: false
+  red_flags:
+    - "Restarting a worker does not fix a permanently failing LLM or tool; intensity only stops the restart storm."
+  found_via: 'search:"Erlang OTP supervisor restart intensity MaxR MaxT let it crash workers"'
+  status: unverified
