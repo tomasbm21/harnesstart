@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import time
@@ -326,6 +327,13 @@ def _ssh_base(vm: ClawVM) -> list[str]:
     return cmd
 
 
+def ssh_remote(command: str | list[str]) -> str:
+    """Single ssh operand. OpenSSH joins extra argv with spaces and does not quote."""
+    if isinstance(command, list):
+        return shlex.join(command)
+    return command
+
+
 def _wait_ssh(vm: ClawVM, *, timeout: int) -> None:
     users = [vm.ssh_user]
     for extra in ("claw", "alpine", "root", "cirros", "ubuntu"):
@@ -375,12 +383,8 @@ def exec_in(
 ) -> ExecResult:
     meta = _read_meta(name)
     vm = _from_meta(meta)
-    if isinstance(command, list):
-        remote = command
-    else:
-        remote = ["sh", "-lc", command]
     proc = subprocess.run(
-        [*_ssh_base(vm), *remote],
+        [*_ssh_base(vm), ssh_remote(command)],
         check=False,
         text=True,
         capture_output=True,
@@ -437,9 +441,15 @@ def persist_probe(name: str) -> dict[str, object]:
     """Write a guest file, stop VMM, start again, read it back."""
     marker = "/root/claw-persist-marker"
     payload = f"claw-persist-{name}-{os.getpid()}"
-    first = exec_in(name, f"echo {payload} > {marker} && sync && cat {marker}")
-    if first.returncode != 0:
-        raise RuntimeError(f"guest write failed: {first.stderr or first.stdout}")
+    first = exec_in(
+        name,
+        f"printf '%s\\n' '{payload}' > {marker} && sync && cat {marker}",
+    )
+    if first.returncode != 0 or payload not in first.stdout:
+        raise RuntimeError(
+            f"guest write failed: rc={first.returncode} "
+            f"stdout={first.stdout!r} stderr={first.stderr!r}"
+        )
     meta = _read_meta(name)
     vmm = str(meta["vmm"])
     image = str(meta.get("image") or "")
