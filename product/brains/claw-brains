@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Norfront Claw — optional Linux-cloud brains (OpenHands, OpenClaw, Goose).
+# Prime Agent stays the default brain in product/claw.
+# Run from anywhere: ./product/brains/claw-brains doctor
+set -euo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$HERE/../.." && pwd)"
+export CLAW_REPO="${CLAW_REPO:-$ROOT}"
+export PATH="$HOME/.local/bin:$PATH"
+export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m claw_brains "$@"

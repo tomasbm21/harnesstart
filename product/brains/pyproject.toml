@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "claw-brains"
+version = "0.1.0"
+description = "Norfront Claw optional Linux-cloud brains: OpenHands, OpenClaw, Goose. Prime Agent stays the default (product/claw)."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = []
+
+[project.scripts]
+claw-brains = "claw_brains.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.4,<9"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["claw_brains"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "live: talks to an installed upstream brain binary on this machine",
+]
