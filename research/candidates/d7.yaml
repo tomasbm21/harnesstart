@@ -1,0 +1,593 @@
+# D7 market lens — user pains and asks for Hermes / OpenClaw / Grok Bot class systems.
+# All status unverified. Domain D7. Seeds vs self-found counted by found_via == "seed".
+- id: d7-hermes-agent
+  name: Hermes Agent
+  url: https://github.com/NousResearch/hermes-agent
+  kind: repo
+  domain: D7
+  what_it_is: Incumbent self-improving agent runtime (skills, gateway, Discord/Telegram, kanban). Users treat it as the default swarm host.
+  license: MIT
+  last_activity: 2026-09-20
+  maintainers: NousResearch
+  runs_on: [macos, unknown]
+  answers: [Q4, Q5, Q9]
+  fit: partial
+  fit_why: Matches Norfront's current ops, but GitHub/Reddit show unsolved skill-index tax, core-tool schema tax, Discord multi-bot loops, and weak-model skill_view skips (R8).
+  price: n/a
+  evidence:
+    - "https://github.com/NousResearch/hermes-agent (MIT; pushed 2026-09-20)"
+    - "ran: git ls-remote https://github.com/NousResearch/hermes-agent HEAD → 639823919ced15640924e905bacab3858c5afd19"
+    - "https://github.com/NousResearch/hermes-agent/releases/tag/v2026.8.31 (v0.21.0 Bot Mode, hermes peer, cron memory)"
+  tried: false
+  red_flags:
+    - "GitHub Discussions disabled (410); issue search via `gh issue list --search` returned empty rows"
+    - "Maintainers closed Discord bot-to-bot as unsupported (#32791) after shipping in-app Bot Mode"
+  found_via: seed
+  status: unverified
+
+- id: d7-openclaw
+  name: OpenClaw
+  url: https://github.com/openclaw/openclaw
+  kind: repo
+  domain: D7
+  what_it_is: High-velocity open agent gateway (subagents, sessions_spawn, skills, compaction). Users compare it directly with Hermes.
+  license: MIT
+  last_activity: 2026-09-20
+  maintainers: OpenClaw Foundation
+  runs_on: [unknown]
+  answers: [Q4, Q5, Q9]
+  fit: partial
+  fit_why: Same user-pain surface as Hermes; experimental tool-search and memoryFlush exist, but operators still report catalog bloat, subagent amnesia, and token burn.
+  price: n/a
+  evidence:
+    - "https://github.com/openclaw/openclaw (LICENSE file is MIT; GitHub license metadata NOASSERTION)"
+    - "ran: git ls-remote https://github.com/openclaw/openclaw HEAD → fcc927f58d020ea6c6cac50ae2041ab4b68270ed"
+    - "ran: gh issue list -R openclaw/openclaw --limit 20 (open traffic is install/session/crash, not the six Grok-claimed pains)"
+    - "https://docs.openclaw.ai/tools/tool-search.md (experimental progressive disclosure)"
+  tried: false
+  red_flags:
+    - "Issue volume is huge; recent list is dominated by gateway crashes and update failures, not product-direction threads"
+  found_via: seed
+  status: unverified
+
+- id: d7-grok-bot
+  name: Grok Bot
+  url: https://docs.x.ai/grok-bot/approvals-security-and-privacy
+  kind: product
+  domain: D7
+  what_it_is: xAI/Cursor always-on named bots on one per-user cloud computer. Official docs say bots are not a security boundary.
+  license: proprietary
+  last_activity: unknown
+  maintainers: xAI / SpaceXAI
+  runs_on: [cloud-only]
+  answers: [Q4, Q5, Q9]
+  fit: weak
+  fit_why: "Violates R2/R4/R6 if copied — shared logins, no dry run, weekly allowance then uncapped overage, memory is one unbounded thread."
+  price: "No standalone SKU. Bundled in Cursor/SuperGrok plans; overage at raw token cost with no spend cap. Seen 2026-09-09 https://clskillshub.com/blog/grok-bot-what-nobody-is-talking-about — official allowance sizes unpublished."
+  evidence:
+    - "https://docs.x.ai/grok-bot/approvals-security-and-privacy (quote: Do not use separate Bots as a security boundary.)"
+    - "https://docs.x.ai/grok-bot/faq (one persistent cloud computer per user, not per Bot)"
+    - "https://clskillshub.com/blog/grok-bot-what-nobody-is-talking-about (forum: Each Bot is one unbounded thread; no manual compaction)"
+  tried: false
+  red_flags:
+    - "Credential pooling is documented as intended design, not a bug to fix"
+    - "Hosted control plane required (fails R4)"
+  found_via: seed
+  status: unverified
+
+- id: d7-hermes-skill-list-bloat
+  name: "Pain: skill-list index always in the prompt"
+  url: https://github.com/NousResearch/hermes-agent/issues/22620
+  kind: pattern
+  domain: D7
+  what_it_is: Operators with 100–200+ skills pay thousands of tokens every turn for name+description catalogs even though SKILL.md is lazy-loaded.
+  license: n/a
+  last_activity: 2026-05-09
+  maintainers: n/a
+  runs_on: [unknown]
+  answers: [Q4, Q9]
+  fit: strong
+  fit_why: "Direct Q4/Q9 demand. Incumbent did not close this; issue 2045 (lazy listing) still OPEN."
+  price: n/a
+  evidence:
+    - "https://github.com/NousResearch/hermes-agent/issues/22620 OPEN — quote: I had to manually categorize and disable 90 skills I never use … just to reduce context by ~37%."
+    - "https://github.com/NousResearch/hermes-agent/issues/2045 OPEN — 87 bundled skills ≈ 1.5k–2k tokens of listing; Discord/Telegram users without prompt cache pay this every message"
+    - "https://www.reddit.com/r/hermesagent/comments/1tz2g33/workshop_hermes_skill_audit_why_your_skills_arent/ (devs hobble descriptions to 60 chars to cut prompt bloat; users say that wastes tokens on skill_view)"
+  tried: false
+  red_flags:
+    - "SKILL.md progressive disclosure is already shipped; remaining complaint is the always-injected index, not full skill bodies"
+  found_via: seed
+  status: unverified
+
+- id: d7-r-hermesagent-memory
+  name: "Pain: MEMORY.md amnesia and context crowding"
+  url: https://www.reddit.com/r/hermesagent/comments/1ue85ae/i_spent_a_week_fighting_hermes_memory_system/
+  kind: pattern
+  domain: D7
+  what_it_is: Operators abandon built-in MEMORY.md for vaults/skills/Hindsight/Honcho because facts vanish, mix, or crowd SOUL.md.
+  license: n/a
+  last_activity: unknown
+  maintainers: n/a
+  runs_on: [unknown]
+  answers: [Q4, Q9]
+  fit: strong
+  fit_why: Users ask for index-then-retrieve memory, not a growing always-on file. v0.21.0 cron continuity is only a slice of this.
+  price: n/a
+  evidence:
+    - "https://www.reddit.com/r/hermesagent/comments/1ue85ae/i_spent_a_week_fighting_hermes_memory_system/ — quote: No more repeating myself. No more \"who am I?\" conversations."
+    - "https://www.reddit.com/r/hermesagent/comments/1tgp7kg/how_do_you_guys_use_memorymd/ — users disable MEMORY.md writes; Honcho 'use a lot of tokens'"
+    - "https://www.reddit.com/r/hermesagent/comments/1u78e1t/i_love_hermes_but/ — quote: There is limit to memory context, onec this context gets too big, your agent forget stuff in your soul file."
+  tried: false
+  red_flags: []
+  found_via: seed
+  status: unverified
+
+- id: d7-hn-agent-vault
+  name: Infisical Agent Vault
+  url: https://github.com/infisical/agent-vault
+  kind: repo
+  domain: D7
+  what_it_is: HTTP credential proxy/vault so agents hold dummy keys; real secrets attach at the proxy. HN Show HN for agent sandboxes.
+  license: MIT Expat with ee/ carve-out
+  last_activity: 2026-09-20
+  maintainers: Infisical
+  runs_on: [unknown]
+  answers: [Q4, Q9]
+  fit: partial
+  fit_why: Direct answer to credential-leakage complaints; needs deny-by-default egress (R6). Hosted Infisical EE may conflict with R4 if required.
+  price: unknown
+  evidence:
+    - "https://news.ycombinator.com/item?id=47865822 (Show HN: Agent Vault)"
+    - "https://github.com/infisical/agent-vault README: Agents should not possess credentials. Mentions Claude Code, OpenClaw, Hermes."
+    - "LICENSE: MIT Expat outside ee/"
+  tried: false
+  red_flags:
+    - "Security guarantee requires all egress forced through the proxy; misconfig leaks"
+  found_via: seed
+  status: unverified
+
+- id: d7-hn-matchlock
+  name: Matchlock
+  url: https://github.com/jingkaihe/matchlock
+  kind: repo
+  domain: D7
+  what_it_is: Firecracker / Virtualization.framework microVM sandbox; host MITM injects secrets; VM never sees real keys.
+  license: MIT
+  last_activity: 2026-07-26
+  maintainers: jingkaihe
+  runs_on: [linux-kvm, macos]
+  answers: [Q4]
+  fit: partial
+  fit_why: Adjacent to R2 isolation; last_activity 2026-07-26 (check staleness). README marks experimental.
+  price: n/a
+  evidence:
+    - "https://news.ycombinator.com/item?id=46932343 (HN: Matchlock)"
+    - "https://github.com/jingkaihe/matchlock (MIT; secrets never enter the VM)"
+    - "ran: gh api repos/jingkaihe/matchlock → pushed 2026-07-26"
+  tried: false
+  red_flags:
+    - "README: experimental / breaking changes"
+  found_via: seed
+  status: unverified
+
+- id: d7-hermes-tool-schema-tax
+  name: "Pain: core tool JSON schemas ~15k tokens/turn"
+  url: https://github.com/NousResearch/hermes-agent/issues/57044
+  kind: pattern
+  domain: D7
+  what_it_is: Default Hermes toolset serializes ~14.7k tokens of JSON schemas on every request; tool_search currently defers MCP/plugin, not core.
+  license: n/a
+  last_activity: 2026-07-02
+  maintainers: n/a
+  runs_on: [unknown]
+  answers: [Q4, Q9]
+  fit: strong
+  fit_why: "Confirms Grok claim of token overhead; incumbent partial-fix (tool_search) does not close core schemas. Issues 57044 and 67273 still OPEN."
+  price: n/a
+  evidence:
+    - "https://github.com/NousResearch/hermes-agent/issues/57044 OPEN — quote: On a default toolset (39 tools), the JSON schemas measure ~14,700 tokens … ~87% of a ~16.5k-token session entry tax"
+    - "https://github.com/NousResearch/hermes-agent/issues/67273 OPEN — Tool schemas consume 83% of every API request"
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/tool-search (core tools always loaded directly unless extra flags)"
+  tried: false
+  red_flags: []
+  found_via: 'search:"Core tool schemas are ~15k tokens hermes-agent"'
+  status: unverified
+
+- id: d7-openclaw-catalog-bloat
+  name: "Pain: OpenClaw always-visible skills + bootstrap files"
+  url: https://www.reddit.com/r/openclaw/comments/1t2hh5v/for_users_experiencing_looooong_delays_and_bloat/
+  kind: pattern
+  domain: D7
+  what_it_is: Independent OpenClaw operators report 60 visible skills, fat AGENTS/HEARTBEAT/TOOLS.md, then compaction/retry spirals.
+  license: n/a
+  last_activity: unknown
+  maintainers: n/a
+  runs_on: [unknown]
+  answers: [Q4, Q9]
+  fit: strong
+  fit_why: Same skill-bloat/token tax outside Hermes. Users ask for allowlists and lightContext subagents, not more skills.
+  price: n/a
+  evidence:
+    - "https://www.reddit.com/r/openclaw/comments/1t2hh5v/for_users_experiencing_looooong_delays_and_bloat/ — quote: the main agent had 60 visible skills … injecting the skill catalog"
+    - "https://www.reddit.com/r/openclaw/comments/1r78fy6/i_asked_opus_46_to_give_me_a_guide_to_reduce/ — SOUL/AGENTS/TOOLS/MEMORY injected every API call"
+    - "https://www.reddit.com/r/openclaw/comments/1rqsg2a/ive_been_using_openclaw_since_the_clawdbot_days/ — MEMORY.md as index; leftover skills 'burned context loading and never fired'"
+  tried: false
+  red_flags: []
+  found_via: 'search:"site:reddit.com openclaw delays and bloat skills"'
+  status: unverified
+
+- id: d7-openclaw-subagent-amnesia
+  name: "Pain: subagents start cold; no directed memory_write"
+  url: https://www.reddit.com/r/openclaw/comments/1s3rodd/the_subagent_mental_model_that_broke_my_brain_and/
+  kind: pattern
+  domain: D7
+  what_it_is: Operators anthropomorphize named subagents; runtime is spawn-as-function with no persistence. Feature request for orchestrator→child memory was closed.
+  license: n/a
+  last_activity: unknown
+  maintainers: n/a
+  runs_on: [unknown]
+  answers: [Q5]
+  fit: strong
+  fit_why: Q5 coordination must not assume chat-memory teammates. Durable board/files beat @mention personality swarms.
+  price: n/a
+  evidence:
+    - "https://www.reddit.com/r/openclaw/comments/1s3rodd/the_subagent_mental_model_that_broke_my_brain_and/ — quote: Every spawn is a fresh function call. No memory. No persistence."
+    - "https://github.com/openclaw/openclaw/issues/27863 CLOSED — orchestrator cannot push learnings into sub-agent memory; every spawned session starts cold"
+    - "https://docs.openclaw.ai/subagents (isolated sessions by default; cost note: each sub-agent has its own context)"
+  tried: false
+  red_flags: []
+  found_via: 'search:"openclaw subagent mental model reddit"'
+  status: unverified
+
+- id: d7-hermes-multiplex-cred-leak
+  name: "Pain: multiplex profiles sharing the default token"
+  url: https://github.com/NousResearch/hermes-agent/issues/51603
+  kind: pattern
+  domain: D7
+  what_it_is: Real cross-instance credential leak in Hermes multiplex mode — secondary profiles inherited the active profile's API/bot tokens via os.getenv.
+  license: n/a
+  last_activity: 2026-08-01
+  maintainers: n/a
+  runs_on: [unknown]
+  answers: [Q4]
+  fit: strong
+  fit_why: Proves credential leakage across instances is not only a Grok-Bot design choice; Hermes had to patch secret_scope. Claw should assume bugs like this until proven isolated.
+  price: n/a
+  evidence:
+    - "https://github.com/NousResearch/hermes-agent/issues/51603 CLOSED 2026-08-01 — resolve_anthropic_token() bypassed profile secret scope"
+    - "https://github.com/NousResearch/hermes-agent/issues/52446 — two Discord tokens both connect as the same bot"
+    - "https://github.com/NousResearch/hermes-agent/pull/51115 — quote: Fixes credential leakage between multiplexed profiles"
+    - "https://github.com/NousResearch/hermes-agent/releases/tag/v2026.9.14 notes multiplexed-profile isolation among undocumented window items"
+  tried: false
+  red_flags:
+    - "Fix claimed on main; remaining getenv call sites are a regression class, not a one-off"
+  found_via: 'search:"hermes-agent multiplex_profiles credential leak"'
+  status: unverified
+
+- id: d7-grok-shared-computer
+  name: "Pain: Grok Bot roster shares logins on one VM"
+  url: https://docs.x.ai/grok-bot/approvals-security-and-privacy
+  kind: pattern
+  domain: D7
+  what_it_is: "Official xAI rule — all bots share files, browser sessions, and CLI credentials. Users who wanted per-bot Chrome profiles report they reset."
+  license: n/a
+  last_activity: unknown
+  maintainers: n/a
+  runs_on: [cloud-only]
+  answers: [Q4, Q5]
+  fit: strong
+  fit_why: Norfront's client path (R5) and secrets (R6) cannot copy Grok's one-computer roster. Users already hit this.
+  price: n/a
+  evidence:
+    - "https://docs.x.ai/grok-bot/approvals-security-and-privacy — quote: Do not use separate Bots as a security boundary."
+    - "https://docs.x.ai/grok-bot/faq — Deleting a Bot does not remove shared-computer files or browser sessions (via security page)"
+    - "https://clskillshub.com/blog/grok-bot-what-nobody-is-talking-about — per-bot Chrome profiles reset daily; shared machine stuck 20–23 Aug 2026 killed every bot"
+  tried: false
+  red_flags: []
+  found_via: 'search:"x.ai Do not use separate Bots as a security boundary"'
+  status: unverified
+
+- id: d7-claude-fake-saved
+  name: "Pain: subagent says I saved it; no Write tool ran"
+  url: https://github.com/anthropics/claude-code/issues/55653
+  kind: pattern
+  domain: D7
+  what_it_is: Read-only subagents report Document saved to <path> with no Write tool. Harness accepts narration as success.
+  license: n/a
+  last_activity: 2026-05-02
+  maintainers: n/a
+  runs_on: [unknown]
+  answers: [Q4, Q5, Q9]
+  fit: strong
+  fit_why: Exact fake-I-did-it failure. R8 DeepSeek-class models will do this unless Claw requires tool-trace + re-fetch probes (Q9).
+  price: n/a
+  evidence:
+    - "https://github.com/anthropics/claude-code/issues/55653 — quote: the subagent reliably reports success (\"Document saved to ...\") without producing the file"
+    - "https://www.reddit.com/r/ClaudeAI/comments/1mwof24/refactoring_subagent_is_not_writing_to_the_file/ — quote: i have an issue where my agent hallucinate their work … report task being done but nothing is real"
+    - "https://news.ycombinator.com/item?id=45181577 — subagents 'veer into mock solutions'"
+  tried: false
+  red_flags: []
+  found_via: 'search:"Read-only subagents claim to save files without a Write tool"'
+  status: unverified
+
+- id: d7-skill-use-paper
+  name: "Skill-Use: Can LLMs Actually Use Skills in Agentic Harnesses?"
+  url: https://arxiv.org/abs/2608.04828
+  kind: paper
+  domain: D7
+  what_it_is: "2026-08 benchmark of progressive-disclosure skills (trigger / compliance / boundary). Cited on Hermes issue 4589 as matching Hermes' 57-char index plus skill_view."
+  license: CC-BY-4.0 (claimed on the citing issue; paper HTML timed out here)
+  last_activity: 2026-08-05
+  maintainers: unknown
+  runs_on: [unknown]
+  answers: [Q4, Q8]
+  fit: partial
+  fit_why: Independent measurement that weak models skip skill load and then fail compliance — the fake-done / R8 story. Full tables not re-read (fetch timeout).
+  price: n/a
+  evidence:
+    - "https://arxiv.org/abs/2608.04828 HTTP 200 (curl -sI 2026-09-20); last-modified 2026-08-24"
+    - "https://github.com/NousResearch/hermes-agent/issues/4589 cites arXiv:2608.04828 — 79 skills × 177 tasks, 8 models; trigger and compliance fail independently"
+  tried: false
+  red_flags:
+    - "Did not extract the PDF/HTML body (WebFetch timeout); treat numbers as issue-comment claims until V1"
+  found_via: 'search:"Skills never auto-trigger skill_view hermes-agent"'
+  status: unverified
+
+- id: d7-hermes-discord-ackloop
+  name: "Pain: Discord multi-bot ack-loops; STOP ignored"
+  url: https://github.com/NousResearch/hermes-agent/issues/32791
+  kind: pattern
+  domain: D7
+  what_it_is: Live 13-profile Hermes fleet death-loop in a free-response channel. Human STOP processed as another turn. Maintainer closed as unsupported topology.
+  license: n/a
+  last_activity: 2026-09-19
+  maintainers: n/a
+  runs_on: [macos]
+  answers: [Q5, Q9]
+  fit: strong
+  fit_why: Same failure Tomas already saw (@mentions interrupt work). Claw must not use chat as the orchestrator. v0.21.0 Bot Mode is a different surface; Discord bot-to-bot still unsupported as of 2026-06-28.
+  price: n/a
+  evidence:
+    - "https://github.com/NousResearch/hermes-agent/issues/32791 — quote: The only working remediation was launchctl bootout + pkill -9 from the host"
+    - "https://github.com/NousResearch/hermes-agent/issues/32791#issuecomment-4825308474 teknium1: Closing — bot-to-bot communication isn't a supported topology in Hermes"
+    - "https://github.com/NousResearch/hermes-agent/issues/814 CLOSED — shared group sessions interrupt running agents; later group_sessions_per_user default"
+    - "https://github.com/NousResearch/hermes-agent/pull/88723 (later: require hard mentions from bots to stop reply-ping loops)"
+  tried: false
+  red_flags:
+    - "Product direction split: in-app Bot Mode encouraged; Discord swarm discouraged"
+  found_via: 'search:"Hermes Discord agents mention interrupt ack-loops"'
+  status: unverified
+
+- id: d7-hermes-tool-search
+  name: Hermes Tool Search
+  url: https://hermes-agent.nousresearch.com/docs/user-guide/features/tool-search
+  kind: product
+  domain: D7
+  what_it_is: Incumbent's shipped answer to tool-token overhead — defer MCP/plugin schemas behind search/describe/call. Core tools still eager by default.
+  license: MIT (parent project)
+  last_activity: unknown
+  maintainers: NousResearch
+  runs_on: [unknown]
+  answers: [Q4, Q9]
+  fit: partial
+  fit_why: Partial fix of the claimed pain, not a close. Extra round-trips; models substitute `gh` in terminal instead of searching deferred GitHub tools (docs).
+  price: n/a
+  evidence:
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/tool-search"
+    - "https://github.com/NousResearch/hermes-agent/pull/67034 (tiered disclosure; 148 live Opus runs)"
+    - "https://github.com/NousResearch/hermes-agent/issues/57044 (tool_search does not reach core toolsets)"
+  tried: false
+  red_flags:
+    - "Opt-in; default installs still pay the core schema tax"
+  found_via: 'search:"Hermes Agent Tool Search progressive disclosure"'
+  status: unverified
+
+- id: d7-openclaw-tool-search
+  name: OpenClaw Tool Search
+  url: https://docs.openclaw.ai/tools/tool-search
+  kind: product
+  domain: D7
+  what_it_is: Experimental OpenClaw catalog compaction (code/tools/directory modes) so the model does not see every schema.
+  license: MIT (parent project)
+  last_activity: unknown
+  maintainers: OpenClaw Foundation
+  runs_on: [unknown]
+  answers: [Q4, Q9]
+  fit: partial
+  fit_why: Shows both incumbents converged on progressive disclosure; still experimental, so default cost pain remains.
+  price: n/a
+  evidence:
+    - "https://github.com/openclaw/openclaw/blob/525db34f/docs/tools/tool-search.md — quote: useful when the run has many available tools but the model is likely to need only a few"
+    - "https://docs.openclaw.ai/reference/session-management-compaction (memoryFlush before compact)"
+  tried: false
+  red_flags:
+    - "Docs label the feature experimental"
+  found_via: 'search:"OpenClaw changelog MCP tools progressive disclosure"'
+  status: unverified
+
+- id: d7-langfuse
+  name: Langfuse
+  url: https://github.com/langfuse/langfuse
+  kind: product
+  domain: D7
+  what_it_is: OSS agent tracing + token/cost dashboards. Users ask for this because provider bills do not show which agent/tool burned the budget.
+  license: MIT Expat with ee/ carve-out
+  last_activity: 2026-09-20
+  maintainers: ClickHouse, Inc. (copyright on LICENSE)
+  runs_on: [unknown]
+  answers: [Q9]
+  fit: partial
+  fit_why: Q9 observability; does not hard-stop spend (alerts ≠ kill switch). Self-host stack is heavy (users complain of ClickHouse+Postgres+Redis+S3).
+  price: unknown (did not open a paid plan page)
+  evidence:
+    - "https://langfuse.com/docs/observability/features/token-and-cost-tracking"
+    - "https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse — agents decide their own spend"
+    - "https://dev.to/jkhusanov/helicone-is-in-maintenance-mode-so-i-built-the-lightweight-alternative-i-wanted-1abl — $4k/month to $11.2k in three weeks from an uncapped agent loop"
+  tried: false
+  red_flags:
+    - "Dashboards without an enforceBudget path do not meet 'cost control'"
+  found_via: 'search:"AI agent swarm cost control token usage dashboard Langfuse"'
+  status: unverified
+
+- id: d7-uipath-orchestrator
+  name: UiPath Orchestrator (wildcard)
+  url: https://www.reddit.com/r/UiPath/comments/o15c2u/high_density_bot_machine_credentials/
+  kind: product
+  domain: D7
+  what_it_is: Adjacent RPA fleet. Users already demand per-robot credentials in a vault, on-prem orchestrator so client secrets never sit in a vendor cloud, and job state that is not 'success' if the robot never started.
+  license: proprietary
+  last_activity: unknown
+  maintainers: UiPath
+  runs_on: [cloud-only]
+  answers: [Q5, Q9]
+  fit: weak
+  fit_why: "Not adoptable (proprietary, R4). Wildcard — the ask (vaulted creds, per-bot Windows identity, faulted vs pending vs success) is the same as Claw's R6/R9."
+  price: unknown (no paid-trial signup, RULES 15)
+  evidence:
+    - "https://www.reddit.com/r/UiPath/comments/o15c2u/high_density_bot_machine_credentials/ — quote: most companies would likely be better suited to license an on-prem Orchestrator … prevent your data from leaking into the UiPath Cloud"
+    - "https://www.reddit.com/r/UiPath/comments/t5d3rl/can_a_robot_perform_a_background_process_on_a/ — unattended robots require stored machine credentials; leasing a robot into a client VM called a poor security standpoint"
+    - "https://www.reddit.com/r/UiPath/comments/1ctcm42/get_pending_jobs_robot_allocation/ — Pending means triggered but not started on the host with credentials yet"
+  tried: false
+  red_flags:
+    - "Wildcard from RPA, not an agent runtime"
+  found_via: 'search:"site:reddit.com UiPath High Density Bot Machine Credentials"'
+  status: unverified
+
+- id: d7-discordbots-host-token
+  name: "Wildcard: Discord bot hosting token blast radius"
+  url: https://www.reddit.com/r/discordbots/comments/1sf5nk6/can_a_compromised_host_nuke_my_server/
+  kind: pattern
+  domain: D7
+  what_it_is: Bot-hosting operators already know a shared host that holds DISCORD_TOKEN can nuke the server. Same shape as agent instances sharing a credential pool.
+  license: n/a
+  last_activity: unknown
+  maintainers: n/a
+  runs_on: [unknown]
+  answers: [Q4]
+  fit: partial
+  fit_why: Wildcard from Discord bot hosting. Claw's Discord-facing agents inherit this blast radius unless tokens are per-instance and not on a shared host.
+  price: n/a
+  evidence:
+    - "https://www.reddit.com/r/discordbots/comments/1sf5nk6/can_a_compromised_host_nuke_my_server/ — quote: admin perms + hosting access = full control; regenerate the bot token"
+    - "https://www.reddit.com/r/discordbots/comments/13b27es/handling_bot_token_when_hosting/ (env vars vs config.json on a host)"
+    - "https://www.reddit.com/r/Pterodactyl/comments/11efwzk/pterodactyl_install_ffmpeg_for_discord_music_bot/ — friend-hosted Pterodactyl; you cannot treat it as your VPS"
+  tried: false
+  red_flags: []
+  found_via: 'search:"site:reddit.com Can a compromised host nuke my discord server bot token"'
+  status: unverified
+
+- id: d7-dont-trust-done
+  name: "Pattern: completion contract / re-fetch before Done"
+  url: https://dev.to/hyuga611/dont-trust-done-forcing-ai-agents-to-re-fetch-reality-before-they-report-completion-3hk9
+  kind: pattern
+  domain: D7
+  what_it_is: Operators encoding 'never trust the same tool's return value as proof' plus Stop-hooks that re-run probes. Direct counter to fake I-did-it.
+  license: n/a
+  last_activity: unknown
+  maintainers: n/a
+  runs_on: [unknown]
+  answers: [Q4, Q9]
+  fit: strong
+  fit_why: Cheap Q4/Q9 requirement for DeepSeek-class models. Even the author's own hook had a fail-open bug — harness must fail closed.
+  price: n/a
+  evidence:
+    - "https://dev.to/hyuga611/dont-trust-done-forcing-ai-agents-to-re-fetch-reality-before-they-report-completion-3hk9 — quote: Never use the return value of the same tool call as evidence — that's exactly where \"I think I did it\" breeds"
+    - "https://github.com/NousResearch/hermes-agent/issues/29115 CLOSED out of scope — Hermes will not scrape tool calls out of free text when weak models emit XML instead of tool_calls"
+  tried: false
+  red_flags: []
+  found_via: 'search:"dont trust done forcing AI agents to re-fetch reality"'
+  status: unverified
+
+- id: d7-r-openclaw-cost
+  name: "Ask: stop burning money on multi-agent copies"
+  url: https://www.reddit.com/r/openclaw/comments/1rj3kp5/how_to_stop_burning_money_on_openclaw/
+  kind: pattern
+  domain: D7
+  what_it_is: "Users who cloned a specialist per role pay a fixed context tax per instance. Community advice is one agent plus skills; spawn subagents only for long parallel work; cheaper models for cron."
+  license: n/a
+  last_activity: unknown
+  maintainers: n/a
+  runs_on: [unknown]
+  answers: [Q5, Q9]
+  fit: strong
+  fit_why: Q5/Q9 from the user side. A 5-bot Grok-style roster is exactly the anti-pattern this thread bills as 'hundreds per week'.
+  price: n/a
+  evidence:
+    - "https://www.reddit.com/r/openclaw/comments/1rj3kp5/how_to_stop_burning_money_on_openclaw/ — quote: One user went from spending hundreds per week on a multi-agent setup to $90 per month with a single agent and a dozen skills"
+    - "https://www.reddit.com/r/openclaw/comments/1r78fy6/i_asked_opus_46_to_give_me_a_guide_to_reduce/ (route heartbeat/cron to Haiku-class)"
+  tried: false
+  red_flags:
+    - "Dollar amounts are anecdotal; no invoice screenshots"
+  found_via: 'search:"How to stop burning money on OpenClaw reddit"'
+  status: unverified
+
+- id: d7-honcho
+  name: Honcho
+  url: https://github.com/plastic-labs/honcho
+  kind: repo
+  domain: D7
+  what_it_is: "External memory library Hermes users plug in after MEMORY.md fails. Reddit is mixed — it works, but is token-heavy and still mixes facts."
+  license: AGPL-3.0
+  last_activity: 2026-09-19
+  maintainers: plastic-labs
+  runs_on: [unknown]
+  answers: [Q4, Q9]
+  fit: weak
+  fit_why: AGPL + extra tokens. Users still report mix-ups. Not a drop-in R4 memory plane.
+  price: unknown
+  evidence:
+    - "https://github.com/plastic-labs/honcho (AGPL-3.0; 'Memory library for building stateful agents'; pushed 2026-09-19)"
+    - "https://www.reddit.com/r/hermesagent/comments/1ue85ae/i_spent_a_week_fighting_hermes_memory_system/ — quote: I am trying honcho … it use a lot of tokens and the result is not ideal either"
+    - "https://www.reddit.com/r/hermesagent/comments/1tgp7kg/how_do_you_guys_use_memorymd/"
+  tried: false
+  red_flags:
+    - "AGPL-3.0"
+  found_via: 'search:"hermes honcho memory tokens reddit"'
+  status: unverified
+
+- id: d7-novee-sandbox-escapes
+  name: "Novee: Breaking Claude Code, Gemini CLI & Codex sandboxes"
+  url: https://novee.security/blog/breaking-ai-agent-sandboxes/
+  kind: paper
+  domain: D7
+  what_it_is: Independent 2026 sandbox-escape write-up. Credentials escaped in every vendor architecture, including a Codex box with TCP/UDP/DNS disabled.
+  license: n/a
+  last_activity: unknown
+  maintainers: Novee
+  runs_on: [unknown]
+  answers: [Q4]
+  fit: partial
+  fit_why: Shows why 'sandbox' without a credential broker still leaks. Supports R2+R6 over container/OS sandboxes.
+  price: n/a
+  evidence:
+    - "https://novee.security/blog/breaking-ai-agent-sandboxes/ — quote: Credentials escaped in every architecture, including from a Codex sandbox with TCP, UDP, and DNS fully disabled"
+    - "https://labs.cloudsecurityalliance.org/wp-content/uploads/2026/07/CSA_research_note_ai_coding_agent_sandbox_escapes_20260722-csa-styled.pdf (sandbox stays closed; downstream trusted tools read what the agent wrote)"
+    - "https://news.ycombinator.com/item?id=47318528 (HN: secrets must never touch the sandbox)"
+  tried: false
+  red_flags: []
+  found_via: 'search:"Breaking Claude Code Gemini CLI Codex Sandboxes Novee"'
+  status: unverified
+
+- id: d7-hermes-weak-model-skill-skip
+  name: "Pain: smaller models ignore skill_view / emit tools as text"
+  url: https://github.com/NousResearch/hermes-agent/issues/4589
+  kind: pattern
+  domain: D7
+  what_it_is: "Hermes users and local-model operators — Qwen/Llama skip skill_view unless named; tool calls leak as XML and the loop never executes. Incumbent refused a content-parser fallback."
+  license: n/a
+  last_activity: unknown
+  maintainers: n/a
+  runs_on: [unknown]
+  answers: [Q4]
+  fit: strong
+  fit_why: Direct R8 evidence. Adopt-vs-fork of Hermes must add harness-level skill prefetch + fail-closed tool parsing, not more prompt text.
+  price: n/a
+  evidence:
+    - "https://github.com/NousResearch/hermes-agent/issues/4589 OPEN — quote: This works somewhat with strong models (Claude, GPT-4o) but almost never with smaller models (Qwen, Llama, Mistral etc.). They just ignore the instruction."
+    - "https://github.com/NousResearch/hermes-agent/issues/29115 CLOSED out of scope — MiniMax/DeepSeek V4/open-weight emit tool calls as text; Hermes strips them instead of executing"
+    - "https://www.reddit.com/r/LocalLLaMA/comments/1sdhvc5/qwen_35_tool_calling_fixes_for_agentic_use_whats/ — finish_reason:stop while XML tool calls sit in content"
+    - "https://www.reddit.com/r/hermesagent/comments/1u78e1t/i_love_hermes_but/ — quote: not convinced at all that this system can be relied on to do anything systematically"
+  tried: false
+  red_flags: []
+  found_via: 'search:"hermes-agent smaller models skip tools skill_view"'
+  status: unverified
