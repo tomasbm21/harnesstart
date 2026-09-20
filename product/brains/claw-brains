@@ -7,5 +7,13 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 export CLAW_REPO="${CLAW_REPO:-$ROOT}"
 export PATH="$HOME/.local/bin:$PATH"
+# OpenClaw's npm global binary lives under nvm; Node 22 on this image is too old.
+NVM_ROOT="${NVM_DIR:-$HOME/.nvm}/versions/node"
+if [ -d "$NVM_ROOT" ]; then
+  NVM_LATEST="$(ls -d "$NVM_ROOT"/v*/bin 2>/dev/null | sort -V | tail -1 || true)"
+  if [ -n "${NVM_LATEST:-}" ]; then
+    export PATH="$NVM_LATEST:$PATH"
+  fi
+fi
 export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
 exec python3 -m claw_brains "$@"

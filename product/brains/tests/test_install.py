@@ -24,8 +24,8 @@ class InstallTest(unittest.TestCase):
         os.environ.clear()
         os.environ.update(
             {
-                "PATH": self._old.get("PATH", "/usr/bin"),
-                "HOME": self._old.get("HOME", str(self.root)),
+                "PATH": "/usr/bin:/bin",
+                "HOME": str(self.root),
                 "CLAW_REPO": str(self.root),
                 "CLAW_BRAINS_HOME": str(self.root / "brains-home"),
                 "CLAW_WORKSPACE": str(self.root / "work"),

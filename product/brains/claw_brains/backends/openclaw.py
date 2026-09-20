@@ -18,7 +18,12 @@ from ..base import (
     which_binary,
 )
 from ..config import Config
-from ..install import OPENCLAW_INSTALL_URL, curl_pipe_sh, openclaw_install_env
+from ..install import (
+    OPENCLAW_INSTALL_URL,
+    curl_pipe_sh,
+    openclaw_install_env,
+    promote_to_local_bin,
+)
 
 SPEC = BrainSpec(
     id="openclaw",
@@ -35,6 +40,55 @@ SPEC = BrainSpec(
 )
 
 HINT = "Install: ./product/brains/claw-brains install openclaw"
+
+
+def node_report() -> tuple[bool, str]:
+    """OpenClaw wants Node 24.16+ or 26.1+. This cloud image ships Node 22 on PATH."""
+    import shutil
+    import subprocess
+
+    from ..base import _child_env
+    from ..paths import nvm_bin_dirs
+
+    candidates: list[str] = []
+    for directory in nvm_bin_dirs():
+        candidate = directory / "node"
+        if candidate.exists():
+            candidates.append(str(candidate))
+    which = shutil.which("node")
+    if which and which not in candidates:
+        candidates.append(which)
+    if not candidates:
+        return False, "node not found (OpenClaw needs 24.16+ or 26.1+)"
+
+    last = "node not found"
+    for node in candidates:
+        try:
+            proc = subprocess.run(
+                [node, "-v"],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=10,
+                env=_child_env(),
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            last = f"{node} (version probe failed)"
+            continue
+        raw = (proc.stdout or proc.stderr or "").strip().lstrip("v")
+        parts = raw.split(".")
+        try:
+            major = int(parts[0])
+            minor = int(parts[1]) if len(parts) > 1 else 0
+        except ValueError:
+            last = f"{node} {raw}"
+            continue
+        ok = (major == 24 and minor >= 16) or major >= 26
+        detail = f"{node} v{raw}"
+        if ok:
+            return True, detail
+        last = detail + " (OpenClaw needs 24.16+ or 26.1+)"
+    return False, last
 
 
 class OpenClawBrain:
@@ -58,6 +112,7 @@ class OpenClawBrain:
         present = binary is not None
         keys = key_status(self.cfg, ("DEEPSEEK_API_KEY", "OPENAI_API_KEY"))
         has_key = self._has_key()
+        node_ok, node_detail = node_report()
         return BrainDoctor(
             id=self.spec.id,
             name=self.spec.name,
@@ -71,6 +126,12 @@ class OpenClawBrain:
             checks=[
                 Check("binary", present, binary or "not on PATH", warning=not present),
                 Check("version", version is not None, version or "unknown", warning=not present),
+                Check(
+                    "node",
+                    True,
+                    node_detail,
+                    warning=not node_ok,
+                ),
                 Check("model-key", True, "set" if has_key else "missing", warning=not has_key),
             ],
             stubbed=[] if (present and has_key) else ["live-model-turn"],
@@ -109,9 +170,12 @@ class OpenClawBrain:
         return run_argv(self.print_argv(prompt), cwd=self.cfg.workspace, timeout=timeout)
 
     def install(self, *, timeout: int = 420) -> BrainResult:
-        return curl_pipe_sh(
+        result = curl_pipe_sh(
             OPENCLAW_INSTALL_URL,
             extra_env=openclaw_install_env(),
             timeout=timeout,
             shell="bash",
         )
+        if result.ok:
+            promote_to_local_bin("openclaw", self.which())
+        return result

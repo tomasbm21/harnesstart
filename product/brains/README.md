@@ -66,6 +66,12 @@ These are **host processes**. Pair with `product/vm` for BRIEF R2. OpenHands’ 
 | `~/.local/share/norfront-claw/brains/selected` | Last `select` (override `CLAW_BRAINS_HOME`) |
 | `~/.local/share/norfront-claw/workspace` | Agent cwd (not the harness git tree) |
 
+## Linux cloud notes
+
+- **Goose** official CLI installer (`CONFIGURE=false`). Headless runs set `GOOSE_DISABLE_KEYRING=1`. `goose doctor` wants a configured provider; without a key that is expected.
+- **OpenHands** official Linux x86_64 binary (`https://install.openhands.dev`). `--headless` does not start Docker.
+- **OpenClaw** official installer (`OPENCLAW_NO_ONBOARD=1`). Needs **Node 24.16+ or 26.1+**. This cloud image’s default Node is 22; `claw-brains install openclaw` prefers an nvm Node 26 if present, and doctor searches `~/.nvm/versions/node/*/bin`.
+
 ## Tests
 
 ```bash

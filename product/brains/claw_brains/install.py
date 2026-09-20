@@ -5,9 +5,10 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+from pathlib import Path
 
 from .base import BrainError, BrainResult
-from .paths import local_bin
+from .paths import local_bin, nvm_bin_dirs
 
 GOOSE_INSTALL_URL = (
     "https://github.com/aaif-goose/goose/releases/download/stable/download_cli.sh"
@@ -89,12 +90,38 @@ def goose_install_env() -> dict[str, str]:
 
 
 def openclaw_install_env() -> dict[str, str]:
-    return {
+    env = {
         "OPENCLAW_NO_ONBOARD": "1",
         "OPENCLAW_NO_PROMPT": "1",
         "CI": "true",
         "OPENCLAW_INSTALL_METHOD": "npm",
     }
+    nvm_path = [str(d) for d in nvm_bin_dirs()]
+    if nvm_path:
+        env["PATH"] = os.pathsep.join(nvm_path) + os.pathsep + os.environ.get("PATH", "")
+    return env
+
+
+def promote_to_local_bin(name: str, found: str | None = None) -> str | None:
+    """Symlink an nvm/npm global binary into ~/.local/bin so doctor finds it."""
+    if not found:
+        found = shutil.which(name)
+    if not found:
+        return None
+    src = Path(found).resolve()
+    if not src.exists():
+        return found
+    dest = local_bin() / name
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if dest.exists() or dest.is_symlink():
+        try:
+            if dest.resolve() == src:
+                return str(dest)
+        except OSError:
+            pass
+        dest.unlink()
+    dest.symlink_to(src)
+    return str(dest)
 
 
 def which_after_install(name: str) -> str | None:

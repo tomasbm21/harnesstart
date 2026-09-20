@@ -41,3 +41,20 @@ def selected_path() -> Path:
 
 def local_bin() -> Path:
     return Path.home() / ".local" / "bin"
+
+
+def nvm_dir() -> Path:
+    raw = os.environ.get("NVM_DIR")
+    if raw:
+        return Path(raw).expanduser()
+    return Path.home() / ".nvm"
+
+
+def nvm_bin_dirs() -> list[Path]:
+    """Newest-first nvm node bin dirs (OpenClaw npm -g lands here)."""
+    versions = nvm_dir() / "versions" / "node"
+    if not versions.is_dir():
+        return []
+    dirs = [p for p in versions.glob("*/bin") if p.is_dir()]
+    dirs.sort(key=lambda p: p.parent.name, reverse=True)
+    return dirs

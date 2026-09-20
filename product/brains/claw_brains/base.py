@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Protocol
 
 from .config import Config, presence_label
-from .paths import local_bin
+from .paths import local_bin, nvm_bin_dirs
 
 FORBIDDEN_FLAGS = frozenset(
     {
@@ -134,6 +134,10 @@ def which_binary(configured: str, names: tuple[str, ...]) -> str | None:
         home = local_bin() / raw
         if home.exists():
             return str(home)
+        for nvm_bin in nvm_bin_dirs():
+            candidate = nvm_bin / raw
+            if candidate.exists():
+                return str(candidate)
     return None
 
 
@@ -159,8 +163,10 @@ def probe_version(binary: str | None, args: tuple[str, ...] = ("--version",)) ->
 
 def _child_env() -> dict[str, str]:
     env = os.environ.copy()
-    local = str(local_bin())
-    env["PATH"] = local + os.pathsep + env.get("PATH", "")
+    parts = [str(local_bin())]
+    for directory in nvm_bin_dirs():
+        parts.append(str(directory))
+    env["PATH"] = os.pathsep.join(parts) + os.pathsep + env.get("PATH", "")
     return env
 
 
