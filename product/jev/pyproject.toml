@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "claw-jev"
+version = "0.1.0"
+description = "Norfront Claw adapter: dedicated Chrome profile + Jev Ultrafast over CDP."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+    "jev-ultrafast @ git+https://github.com/browser-use/jev-ultrafast.git@1231850a0bf1a0c0341fe408ef1668dbbfdfac46",
+]
+
+[project.scripts]
+claw-jev = "claw_jev.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.4,<9"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["claw_jev"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "live: needs dedicated Chrome/CDP on this machine",
+]
