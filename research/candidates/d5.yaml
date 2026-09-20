@@ -1,0 +1,630 @@
+# D5 fortress scout — secrets, egress, prompt-injection containment. status unverified.
+- id: d5-lethal-trifecta
+  name: Lethal trifecta (Willison)
+  url: https://simonwillison.net/2025/jun/16/the-lethal-trifecta/
+  kind: pattern
+  domain: D5
+  what_it_is: Framing that one agent/context with private data, untrusted content, and any egress path can be coerced into exfiltration; removing any one leg stops the class.
+  license: n/a
+  last_activity: 2025-06-16
+  maintainers: Simon Willison
+  runs_on: [unknown]
+  answers: [Q7, Q1]
+  fit: strong
+  fit_why: Directly states R6 (secrets off untrusted paths) and informs Q1 zone splits; no product to install.
+  price: n/a
+  evidence:
+    - "https://simonwillison.net/2025/jun/16/the-lethal-trifecta/ (three legs; GitHub MCP as one-tool trifecta)"
+    - "https://simonwillison.net/2025/Aug/9/bay-area-ai/ (removing any one leg is enough)"
+  tried: false
+  red_flags:
+    - Guardrail products claiming ~95% detection are called a failing grade here; architecture must drop a leg.
+  found_via: seed
+  status: unverified
+
+- id: d5-owasp-llm-top10
+  name: OWASP Top 10 for LLM Applications 2025
+  url: https://genai.owasp.org/llm-top-10/
+  kind: paper
+  domain: D5
+  what_it_is: Risk catalog for LLM apps; LLM01 prompt injection, LLM02 sensitive disclosure, LLM06 excessive agency, plus HITL and least-privilege mitigations.
+  license: unknown
+  last_activity: 2025-03-12
+  maintainers: OWASP GenAI Security Project
+  runs_on: [unknown]
+  answers: [Q7]
+  fit: strong
+  fit_why: Checklist a client review will map to; does not itself implement R1–R8.
+  price: n/a
+  evidence:
+    - "https://genai.owasp.org/llm-top-10/ (LLM01–LLM10 2025 titles)"
+    - "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf"
+    - "https://raw.githubusercontent.com/OWASP/www-project-top-10-for-large-language-model-applications/main/2_0_vulns/LLM01_PromptInjection.md (HITL, least privilege, segregate untrusted content)"
+  tried: false
+  red_flags:
+    - Document says fool-proof prompt-injection prevention is unclear; filtering alone is not a boundary.
+  found_via: seed
+  status: unverified
+
+- id: d5-nvidia-openshell
+  name: NVIDIA OpenShell
+  url: https://github.com/NVIDIA/OpenShell
+  kind: repo
+  domain: D5
+  what_it_is: Agent sandbox with deny-by-default egress, Landlock FS, seccomp, and host-side credential placeholders rewritten only onto policy-matched endpoints.
+  license: Apache-2.0
+  last_activity: 2026-09-20
+  maintainers: NVIDIA (github.com/NVIDIA)
+  runs_on: [linux-kvm, unknown]
+  answers: [Q7, Q1]
+  fit: partial
+  fit_why: Strong R4/R6 broker+policy story; docs describe container+Landlock, not a VM, so R2 needs another layer. Nested Apple Silicon support unknown.
+  price: n/a
+  evidence:
+    - "https://github.com/NVIDIA/OpenShell (Apache-2.0; gh pushedAt 2026-09-20; 8710 stars)"
+    - "https://docs.nvidia.com/openshell/dev/about/overview (Landlock FS; placeholders; deny-by-default network)"
+    - "https://docs.nvidia.com/openshell/dev/reference/policy-schema (credential_endpoint_mismatch 403; no uninspected credentialed TLS skip by default)"
+    - "ran: gh repo view NVIDIA/OpenShell → license apache-2.0"
+  tried: false
+  red_flags:
+    - Isolation is not a hardware VM (BRIEF R2).
+    - Nested-virt / Apple Silicon path not documented on the pages checked.
+  found_via: seed
+  status: unverified
+
+- id: d5-strangeclaw
+  name: strangeClaw (host-side request broker)
+  url: https://github.com/itsthestranger/strangeClaw
+  kind: repo
+  domain: D5
+  what_it_is: Firecracker guest with no secrets; host broker injects credentials after method/host/path/size/rate checks and recursively redacts responses before they reach the model.
+  license: MIT
+  last_activity: 2026-09-07
+  maintainers: itsthestranger (Phillip Stranger)
+  runs_on: [linux-kvm]
+  answers: [Q7, Q1]
+  fit: strong
+  fit_why: Matches R2+R6 pattern (secrets on host, guest observes denials). R1 nested Firecracker on Apple Silicon still D1's problem. Tiny maintainer set.
+  price: n/a
+  evidence:
+    - "https://github.com/itsthestranger/strangeClaw (README Fire mode + broker diagram)"
+    - "https://github.com/itsthestranger/strangeClaw/blob/main/docs/fire-mode.md (secrets.yaml on host; MMDS _assert_no_secrets; recursive redaction)"
+    - "ran: gh repo view itsthestranger/strangeClaw → MIT, 4 stars, pushed 2026-09-07"
+  tried: false
+  red_flags:
+    - 4 GitHub stars; single-maintainer risk (rubric maturity).
+    - Broker is not a general internet ACL; unauthenticated egress still needs nftables/proxy.
+  found_via: seed
+  status: unverified
+
+- id: d5-hermes-credential-vault
+  name: Hermes credential vault
+  url: https://hermes-agent.nousresearch.com/docs/user-guide/features/credential-vault
+  kind: product
+  domain: D5
+  what_it_is: Profile-scoped Fernet vault under ~/.hermes/vault/; origin-bound CDP fill so the model never sees passwords; separate startup secret-sources can still dump API keys into os.environ.
+  license: MIT
+  last_activity: 2026-09-20
+  maintainers: Nous Research
+  runs_on: [linux-kvm, macos, nested-apple-silicon]
+  answers: [Q7]
+  fit: partial
+  fit_why: Browser logins meet R6 if fills stay origin-bound; API-key path into the agent process env re-creates trifecta private-data. Incumbent, so cheap to adopt.
+  price: n/a
+  evidence:
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/credential-vault (0600 vault; origin match; card fills need approval; headless cannot spend)"
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/secrets/ (Bitwarden/1Password into os.environ at startup)"
+    - "https://github.com/NousResearch/hermes-agent/pull/96988 (opaque-handle fill; refuse on origin mismatch)"
+    - "ran: gh repo view NousResearch/hermes-agent → MIT, pushed 2026-09-20"
+  tried: false
+  red_flags:
+    - Secret sources inject plaintext keys into the same process that reads untrusted pages.
+    - Docs admit the destination page (and cloud-browser vendor) sees the password after fill.
+  found_via: seed
+  status: unverified
+
+- id: d5-squid
+  name: Squid
+  url: https://github.com/squid-cache/squid
+  kind: repo
+  domain: D5
+  what_it_is: Mature forward proxy with ordered http_access ACLs, Safe_ports/SSL_ports, and access.log; default-deny unless rules allow.
+  license: GPL-2.0
+  last_activity: 2026-09-19
+  maintainers: Squid Web Cache project
+  runs_on: [linux-kvm, macos, unknown]
+  answers: [Q7]
+  fit: partial
+  fit_why: Self-hosted R4 egress choke point with audit logs; CONNECT to 443 is an opaque tunnel unless SSL-bump (privacy/MITM tradeoff). Runs in claw-host, not a substitute for R2.
+  price: n/a
+  evidence:
+    - "http://www.squid-cache.org/Doc/config/http_access/ (default deny; recommend deny all at end)"
+    - "https://wiki.squid-cache.org/SquidFaq/SecurityPitfalls (Safe_ports / CONNECT SSL_ports)"
+    - "ran: gh repo view squid-cache/squid → GPL-2.0, pushed 2026-09-19"
+    - "ran: command -v squid → missing on this scout VM"
+  tried: true
+  red_flags:
+    - HTTPS CONNECT hides method/path unless TLS is terminated; L7 policy then needs a bumping proxy (OpenShell/Smokescreen-class).
+  found_via: seed
+  status: unverified
+
+- id: d5-smokescreen
+  name: Stripe Smokescreen
+  url: https://github.com/stripe/smokescreen
+  kind: repo
+  domain: D5
+  what_it_is: HTTP CONNECT egress proxy with hostname ACLs, public-IP checks (SSRF), optional mTLS client roles, and --egress-acl-file.
+  license: MIT
+  last_activity: 2026-09-18
+  maintainers: Stripe
+  runs_on: [linux-kvm, unknown]
+  answers: [Q7]
+  fit: strong
+  fit_why: Deny-internal + allowlist hostname is the enterprise egress pattern; MIT; we ran --help. Still L4 CONNECT, not body inspection.
+  price: n/a
+  evidence:
+    - "https://github.com/stripe/smokescreen/blob/master/README.md (CONNECT; hostname ACL; block RFC1918)"
+    - "ran: git clone --depth 1 https://github.com/stripe/smokescreen; go run . --help → listen-port default 4750, --deny-range, --egress-acl-file (go.mod requires go 1.25; toolchain downloaded)"
+    - "ran: gh repo view stripe/smokescreen → MIT, 1341 stars, pushed 2026-09-18"
+  tried: true
+  red_flags:
+    - go.mod is go 1.25.0; claw-host may need a newer toolchain than distro Go.
+    - Does not rewrite credentials; pair with a broker.
+  found_via: seed
+  status: unverified
+
+- id: d5-nftables
+  name: nftables
+  url: https://wiki.nftables.org
+  kind: product
+  domain: D5
+  what_it_is: In-kernel packet filter (netfilter). inet output/postrouting plus netdev egress hook (kernel ≥5.16, nft ≥1.0.1) for deny-by-default guest NAT.
+  license: GPL-2.0
+  last_activity: unknown
+  maintainers: netfilter coreteam
+  runs_on: [linux-kvm]
+  answers: [Q7]
+  fit: strong
+  fit_why: claw-host provision already apt-installs nftables (host/20-provision-host.sh). Enforces R6 egress even if the proxy is bypassed. Not a substitute for L7 policy.
+  price: n/a
+  evidence:
+    - "https://wiki.nftables.org/wiki-nftables/index.php/Netfilter_hooks (netdev egress 1.0.1 / 5.16)"
+    - "https://netfilter.org/projects/nftables/manpage.html (netdev family ingress/egress)"
+    - "https://www.netfilter.org/licensing.html (netfilter GPLv2-only)"
+    - "host/20-provision-host.sh installs nftables on claw-host"
+    - "ran: command -v nft → not found on this scout VM; dpkg has no nftables; kernel still has nf_conntrack_* sysctls"
+  tried: true
+  red_flags:
+    - IP/port only; cannot see HTTPS method. Agents will CONNECT or use raw sockets unless also namespaced + no NET_RAW.
+    - This Cursor scout VM has no nft binary and empty apt lists (0 files in /var/lib/apt/lists).
+  found_via: seed
+  status: unverified
+
+- id: d5-gvisor
+  name: gVisor
+  url: https://github.com/google/gvisor
+  kind: repo
+  domain: D5
+  what_it_is: Userspace application kernel (Sentry in Go) intercepting syscalls; Systrap default, optional KVM platform. Not a guest kernel / not BRIEF R2.
+  license: Apache-2.0
+  last_activity: 2026-09-19
+  maintainers: Google
+  runs_on: [linux-kvm, unknown]
+  answers: [Q7, Q1]
+  fit: weak
+  fit_why: Useful comparison for “containers plus a second kernel,” but R2 requires a VM boundary. Nested KVM platform is slow per gVisor’s own Systrap post.
+  price: n/a
+  evidence:
+    - "https://gvisor.dev/docs/ (Sentry does not pass app syscalls through to host)"
+    - "https://gvisor.dev/docs/architecture_guide/intro/ (application kernel, not a hypervisor)"
+    - "https://gvisor.dev/blog/2023/04/28/systrap-release/ (KVM platform + nested virt cost; ptrace slow)"
+    - "ran: gh repo view google/gvisor → Apache-2.0, 19368 stars; git ls-remote heads → 496 refs"
+  tried: false
+  red_flags:
+    - Compatibility gaps vs real Linux; not a hardware VM.
+    - runsc missing on this scout VM.
+  found_via: seed
+  status: unverified
+
+- id: d5-firecracker-escapes
+  name: Firecracker published escape/jailer CVEs
+  url: https://github.com/firecracker-microvm/firecracker/security/advisories
+  kind: paper
+  domain: D5
+  what_it_is: Public 2026 advisories — CVE-2026-5747 virtio-PCI OOB write (opt-in --enable-pci; host RCE needs extra preconditions) and CVE-2026-1386 jailer symlink host-file overwrite.
+  license: Apache-2.0
+  last_activity: 2026-04-07
+  maintainers: Amazon Web Services
+  runs_on: [linux-kvm]
+  answers: [Q7, Q1]
+  fit: partial
+  fit_why: Isolation claims need this history; default MMIO transport is out of CVE-2026-5747. Jailer is the second line of defense and was itself buggy. Patch cadence is a client-review item.
+  price: n/a
+  evidence:
+    - "https://github.com/firecracker-microvm/firecracker/security/advisories/GHSA-776c-mpj7-jm3r (CVE-2026-5747; 1.13.0–1.14.3 and 1.15.0; reported by Anthropic)"
+    - "https://nvd.nist.gov/vuln/detail/CVE-2026-5747 (aarch64 and x86_64)"
+    - "https://github.com/firecracker-microvm/firecracker/security/advisories/GHSA-36j2-f825-qvgc (CVE-2026-1386 jailer symlink)"
+    - "https://aws.amazon.com/security/security-bulletins/2026-015-aws/"
+  tried: false
+  red_flags:
+    - Snapshot restore + custom guest kernels are called out as host-RCE preconditions; Claw persistence/snapshots need a threat model.
+    - Jailer-as-root on a writable jailer dir is a host-overwrite path even without a guest escape.
+  found_via: seed
+  status: unverified
+
+- id: d5-qubes-split-gpg
+  name: Qubes OS split-GPG / qrexec
+  url: https://doc.qubes-os.org/en/latest/user/security-in-qubes/split-gpg-2.html
+  kind: product
+  domain: D5
+  what_it_is: Wildcard. Offline vault qube holds keys; networked client delegates crypto via qrexec; human confirms; compromise of the mail/web VM does not copy private keys.
+  license: GPL-2.0
+  last_activity: 2026-04-20
+  maintainers: Qubes OS Project
+  runs_on: [unknown]
+  answers: [Q7, Q1]
+  fit: partial
+  fit_why: Best published per-zone secret pattern (vault vs act). Does not run inside a Lima Linux VM on a Mac (R1 miss) but is the architecture a CISO already understands.
+  price: n/a
+  evidence:
+    - "https://doc.qubes-os.org/en/latest/user/security-in-qubes/split-gpg-2.html (server-qube offline; client asks; qrexec qubes.Gpg2)"
+    - "https://www.qubes-os.org/doc/license/ (compilation GPLv2; per-repo LICENSE may differ)"
+    - "https://github.com/QubesOS/qubes-core-admin (gh license LGPL-2.1; pushed 2026-09-16)"
+  tried: false
+  red_flags:
+    - Split GPG protects keys, not plaintext of decrypted mail (docs say consider a specialized RPC).
+    - Not deployable as Claw's nested agent computer on Apple Silicon.
+  found_via: 'search:"Qubes OS qrexec RPC policy split GPG vault VM isolation"'
+  status: unverified
+
+- id: d5-landlock
+  name: Linux Landlock LSM
+  url: https://docs.kernel.org/userspace-api/landlock.html
+  kind: protocol
+  domain: D5
+  what_it_is: Wildcard. Unprivileged, stackable FS/net sandbox syscalls. OpenShell uses it. This scout kernel reports ABI 6 and landlock Up and running.
+  license: GPL-2.0
+  last_activity: unknown
+  maintainers: Linux kernel / Mickaël Salaün
+  runs_on: [linux-kvm, nested-apple-silicon, unknown]
+  answers: [Q7]
+  fit: partial
+  fit_why: Cheap extra restriction inside a VM (defense in depth for R6 files). Not a VM (R2). ABI availability on claw-host's kernel is unknown until measured there.
+  price: n/a
+  evidence:
+    - "https://docs.kernel.org/userspace-api/landlock.html (unprivileged self-restrict; CONFIG_SECURITY_LANDLOCK)"
+    - "https://man7.org/linux/man-pages/man7/landlock.7.html"
+    - "ran: cat /sys/kernel/security/lsm → capability,landlock,selinux"
+    - "ran: python3 libc.syscall(444, NULL, 0, LANDLOCK_CREATE_RULESET_VERSION) → rc 6 errno 0 (ABI 6)"
+    - "ran: dmesg | grep landlock → 'landlock: Up and running.'"
+  tried: true
+  red_flags:
+    - Only adds restrictions; does not hide credentials already in the process.
+    - Needs no_new_privs; SUID children are a confused-deputy risk if unset.
+  found_via: 'search:"Linux Landlock LSM documentation kernel.org unprivileged sandbox"'
+  status: unverified
+
+- id: d5-softhsm-pkcs11
+  name: SoftHSM2 / PKCS#11 non-extractable keys
+  url: https://github.com/softhsm/SoftHSMv2
+  kind: repo
+  domain: D5
+  what_it_is: Wildcard. PKCS#11 token (software HSM) so CKA_SENSITIVE/CKA_EXTRACTABLE=false keys can sign/decrypt without the private blob entering the agent. Hardware YubiHSM2 is the same interface.
+  license: BSD-2-Clause
+  last_activity: 2026-09-03
+  maintainers: OpenDNSSEC / softhsm
+  runs_on: [linux-kvm, macos, unknown]
+  answers: [Q7]
+  fit: partial
+  fit_why: Right place for signing keys (R6) if the broker holds the PKCS#11 session, not the guest. SoftHSM is not tamper-resistant; PIN theft still uses the key. R1-friendly (no extra hardware required).
+  price: n/a
+  evidence:
+    - "https://github.com/softhsm/SoftHSMv2 (README PKCS#11 without revealing private-key material)"
+    - "ran: gh repo view softhsm/SoftHSMv2 → license other; LICENSE file is BSD-2-Clause; pushed 2026-09-03"
+    - "https://docs.yubico.com/hardware/yubihsm-2/hsm-2-user-guide/hsm2-tools-pkcs11.html (CKA_SENSITIVE true, objects immutable)"
+    - "ran: command -v softhsm2-util → missing"
+  tried: true
+  red_flags:
+    - SoftHSM keys live as files on disk; this is an API shape, not a hardware boundary.
+    - Agent still sees plaintext of whatever it asked to decrypt unless the vault VM returns only a success bit.
+  found_via: 'search:"PKCS#11 OASIS standard SoftHSM YubiHSM agent secrets never leave HSM"'
+  status: unverified
+
+- id: d5-chromium-site-isolation
+  name: Chromium site isolation
+  url: https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/process_model_and_site_isolation.md
+  kind: pattern
+  domain: D5
+  what_it_is: Wildcard. Process locked to scheme+eTLD+1; cross-site iframes are OOPIFs so a compromised renderer should not read another origin's cookies/DOM.
+  license: BSD-3-Clause
+  last_activity: unknown
+  maintainers: Chromium / Google
+  runs_on: [linux-kvm, macos, unknown]
+  answers: [Q7, Q1]
+  fit: partial
+  fit_why: Origin-bound secret fill (Hermes vault) is the same idea as site isolation. Agent browsers must not disable site-per-process. RAM cost on a 48 GB Mac (R1) is real; Android even turns it off under 2 GB.
+  price: n/a
+  evidence:
+    - "https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/process_model_and_site_isolation.md (full site isolation on desktop; disabled <2 GB Android)"
+    - "https://www.chromium.org/developers/design-documents/oop-iframes/"
+    - "https://new.chromium.org/developers/design-documents/site-isolation/"
+  tried: false
+  red_flags:
+    - CDP/VNC with a privileged browser process can collapse this boundary (D3 overlap).
+    - Same-site is eTLD+1, not origin; github.com/attacker vs github.com/victim still share a site.
+  found_via: 'search:"Chromium Site Isolation ProcessPerSiteInstance out-of-process iframes design document"'
+  status: unverified
+
+- id: d5-camel
+  name: CaMeL (DeepMind)
+  url: https://github.com/google-research/camel-prompt-injection
+  kind: repo
+  domain: D5
+  what_it_is: Privileged LLM emits Python; custom interpreter taint-tracks capabilities so untrusted data cannot change control flow or unauthorized tool args. AgentDojo 77% vs 84% undefended.
+  license: Apache-2.0
+  last_activity: 2025-06-20
+  maintainers: Google Research / DeepMind / ETH Zurich (paper authors)
+  runs_on: [unknown]
+  answers: [Q7]
+  fit: partial
+  fit_why: Strongest published *design* for R6 without trusting the model. README says research artifact, possibly insecure, unmaintained. Last push 2025-06-20.
+  price: n/a
+  evidence:
+    - "https://arxiv.org/abs/2503.18813 (CaMeL; 77% AgentDojo with guarantees)"
+    - "https://github.com/google-research/camel-prompt-injection (Apache-2.0; not a Google product warning)"
+    - "https://simonwillison.net/2025/apr/11/camel/"
+    - "ran: gh repo view google-research/camel-prompt-injection → pushed 2025-06-20, 391 stars"
+  tried: false
+  red_flags:
+    - Authors warn the interpreter likely has bugs and is not fully secure.
+    - Does not stop misleading text-only answers or side channels (paper §8.3).
+  found_via: 'search:"CaMeL Defeating Prompt Injections by Design DeepMind github camel-prompt-injection"'
+  status: unverified
+
+- id: d5-design-patterns-llm
+  name: Design Patterns for Securing LLM Agents
+  url: https://arxiv.org/abs/2506.08837
+  kind: paper
+  domain: D5
+  what_it_is: Six patterns (Action-Selector, Plan-Then-Execute, Map-Reduce, Dual LLM, Code-Then-Execute, Context-Minimization). Quote — after untrusted input, consequential actions must be impossible.
+  license: unknown
+  last_activity: 2025-06-27
+  maintainers: unknown
+  runs_on: [unknown]
+  answers: [Q7, Q1]
+  fit: strong
+  fit_why: Gives proposers a vocabulary for per-zone agents vs one generalist. Aligns with R6/R8 (do not trust DeepSeek to ignore injections).
+  price: n/a
+  evidence:
+    - "https://arxiv.org/abs/2506.08837v3 (v3 2025-06-27; six patterns named in HTML)"
+    - "https://simonwillison.net/2025/jun/16/the-lethal-trifecta/ (cites the paper's constraint quote)"
+  tried: false
+  red_flags:
+    - Patterns cut utility of a general-purpose ops agent; swarm must be specialised (Q1).
+  found_via: 'search:"Design Patterns for Securing LLM Agents against Prompt Injections paper arxiv"'
+  status: unverified
+
+- id: d5-tetragon
+  name: Cilium Tetragon
+  url: https://github.com/cilium/tetragon
+  kind: repo
+  domain: D5
+  what_it_is: eBPF runtime audit/enforcement (process, file, network). TracingPolicy can SIGKILL unauthorized connect(); works without Kubernetes via tetra CLI.
+  license: Apache-2.0
+  last_activity: 2026-09-20
+  maintainers: Cilium / CNCF
+  runs_on: [linux-kvm]
+  answers: [Q7]
+  fit: partial
+  fit_why: Client reviews will ask for immutable syscall/connect logs outside the agent VM. Needs CAP_BPF/root on claw-host; Apple nested virt eBPF unknown.
+  price: n/a
+  evidence:
+    - "https://github.com/cilium/tetragon (Apache-2.0; 5019 stars; pushed 2026-09-20)"
+    - "https://raw.githubusercontent.com/cilium/tetragon/refs/heads/main/examples/tracingpolicy/tcp-connect-only-private-addrs.yaml (NotDAddr + Sigkill on curl)"
+    - "https://tetragon.io/docs/reference/tracing-policy/"
+  tried: false
+  red_flags:
+    - Logs on the same host an escaped guest can reach are not a forensic boundary; need host-side or remote sink.
+    - Privileged eBPF on a laptop increases host attack surface.
+  found_via: 'search:"Cilium Tetragon eBPF runtime security audit process network github"'
+  status: unverified
+
+- id: d5-opensnitch
+  name: OpenSnitch
+  url: https://github.com/evilsocket/opensnitch
+  kind: repo
+  domain: D5
+  what_it_is: Interactive Linux egress firewall (Little Snitch clone) on nftables/eBPF; pop-up allow/deny per binary+dest, or DefaultAction deny.
+  license: GPL-3.0
+  last_activity: 2026-07-26
+  maintainers: evilsocket + contributors (Debian package by Gustavo Iñiguez Goya)
+  runs_on: [linux-kvm]
+  answers: [Q7]
+  fit: partial
+  fit_why: Approval UX analog for unexpected connections (R6). GPL-3 may be awkward next to Apache/MIT stack. GUI-centric; not a silent policy engine for a swarm.
+  price: n/a
+  evidence:
+    - "https://github.com/evilsocket/opensnitch (GPL-3.0; 14081 stars)"
+    - "https://github.com/evilsocket/opensnitch/wiki/Rules (deny default; prompt if no match)"
+    - "https://lwn.net/Articles/988401/ (eBPF vs auditd backends; kernel 5.5+)"
+    - "ran: gh repo view evilsocket/opensnitch → pushed 2026-07-26"
+  tried: false
+  red_flags:
+    - Prompt fatigue; agents opening many sockets will train the operator to click Allow.
+    - Last push 2026-07-26 (newer than 6 months, but slower than OpenShell/Tetragon).
+  found_via: 'search:"OpenSnitch github evilsocket linux application firewall egress approval"'
+  status: unverified
+
+- id: d5-hermes-approval
+  name: Hermes dangerous-command approval
+  url: https://hermes-agent.nousresearch.com/docs/user-guide/security
+  kind: product
+  domain: D5
+  what_it_is: Regex/LLM gate on shell (smart/manual/off); fail-closed 300s; UNRECOVERABLE_BLOCKLIST below --yolo. MCP/HTTP/email writes currently skip this gate (issues 49167, 51221).
+  license: MIT
+  last_activity: 2026-09-20
+  maintainers: Nous Research
+  runs_on: [linux-kvm, macos, nested-apple-silicon]
+  answers: [Q7]
+  fit: partial
+  fit_why: Exists and fail-closed, which R6 wants — but only for terminal patterns. Irreversible send/post/pay are exactly the ungated tools.
+  price: n/a
+  evidence:
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/security (approval; YOLO skipped in containers; blocklist floor)"
+    - "https://hermes-agent.nousresearch.com/docs/guides/secure-hermes-on-a-work-machine (smart mode; 300s deny)"
+    - "https://github.com/NousResearch/hermes-agent/issues/49167 (MCP writes execute immediately; GitHub comment posted despite prompt rules)"
+    - "https://github.com/NousResearch/hermes-agent/issues/51221 (HTTP/SMTP/CalDAV ungated)"
+  tried: false
+  red_flags:
+    - Container backends skip dangerous-command checks (docs).
+    - Prompt-level 'ask first' is not a control; issue 49167 is a live R6 hole.
+  found_via: 'search:"Hermes agent dangerous command approval human in the loop irreversible actions"'
+  status: unverified
+
+- id: d5-agentsecrets
+  name: AgentSecrets
+  url: https://github.com/The-17/agentsecrets
+  kind: repo
+  domain: D5
+  what_it_is: Credential host that claims no get() for raw values; injects at request time; response redaction; SHA-256 hash-chained audit without a value field.
+  license: MIT
+  last_activity: 2026-09-12
+  maintainers: The-17
+  runs_on: [unknown]
+  answers: [Q7]
+  fit: partial
+  fit_why: Same broker idea as strangeClaw/OpenShell, MIT, with audit as a selling point. Maturity unknown; 180 stars.
+  price: n/a
+  evidence:
+    - "https://github.com/The-17/agentsecrets (README zero-knowledge; MCP/OpenClaw/HTTP proxy; no get())"
+    - "ran: gh repo view The-17/agentsecrets → MIT, 180 stars, pushed 2026-09-12"
+  tried: false
+  red_flags:
+    - README security claims not independently tested here.
+    - Young project; client review will ask for third-party audit.
+  found_via: 'search:"strangeClaw credential broker host-side agent secrets github"'
+  status: unverified
+
+- id: d5-januscape-kvm
+  name: Januscape (KVM nested escape)
+  url: https://labs.cloudsecurityalliance.org/research/csa-research-note-januscape-kvm-guest-host-escape-cve-2026-5/
+  kind: paper
+  domain: D5
+  what_it_is: CVE-2026-53359 (+ companion CVE-2026-46113) use-after-free in KVM x86 shadow MMU since 2010; guest root + nested virt → claimed host root. Fixes in 6.12.95+.
+  license: n/a
+  last_activity: 2026-07-08
+  maintainers: n/a (Linux KVM)
+  runs_on: [linux-kvm]
+  answers: [Q1, Q7]
+  fit: partial
+  fit_why: Claw R1/R2 *requires* nested virt on the Mac. This bug class is why a CISO will ask about host kernel version and whether nested is on. Apple Silicon KVM code path vs x86 shadow MMU is unknown.
+  price: n/a
+  evidence:
+    - "https://labs.cloudsecurityalliance.org/research/csa-research-note-januscape-kvm-guest-host-escape-cve-2026-5/ (CVE-2026-53359; nested required; two commits)"
+    - "https://nvd.nist.gov/vuln/detail/cve-2015-3456 (VENOM/QEMU FDC; historical KVM/QEMU device-model escape)"
+    - "ran: uname -r → 6.12.94+; cat kvm_intel nested=Y and kvm_amd nested=1 on this scout VM"
+  tried: true
+  red_flags:
+    - This scout kernel 6.12.94+ is one patch below the CSA-listed 6.12.95 fix; nested=Y here. Exploitability on this host not verified.
+    - CSA write-up is x86 Intel/AMD; aarch64/Apple Silicon mapping unknown.
+  found_via: 'search:"KVM CVE hypervisor escape QEMU VENOM CVE-2015-3456 nested virtualization"'
+  status: unverified
+
+- id: d5-ai-vendor-questionnaire
+  name: AI-agent security questionnaires (SOC 2 / ISO)
+  url: https://www.deepinspect.ai/blog/ai-vendor-security-questionnaire
+  kind: paper
+  domain: D5
+  what_it_is: What client reviews actually ask — tenant isolation, per-decision audit, fail-closed policy, prompt-injection tests, subprocessors, kill switch — beyond a vanilla SOC 2.
+  license: n/a
+  last_activity: unknown
+  maintainers: unknown
+  runs_on: [unknown]
+  answers: [Q7]
+  fit: strong
+  fit_why: Rubric 'client portability' and fortress CISO bar. SOC 2 TSC do not name prompt injection; evidence must be Claw-specific.
+  price: n/a
+  evidence:
+    - "https://www.deepinspect.ai/blog/ai-vendor-security-questionnaire (38 questions; per-decision audit fields)"
+    - "https://roval.ai/research/blog/soc-2-ai-agents/ (CC6.1 keys; CC7.2 injection/exfil monitoring; agent inventory)"
+    - "https://cyberzoni.com/ai-vendor-due-diligence/ (ISO 27001/42001; OWASP LLM mapping; human override)"
+  tried: false
+  red_flags:
+    - These are vendor-blog questionnaires, not AICPA or ISO text; treat as market signal, not a standard.
+  found_via: 'search:"enterprise security questionnaire AI agents SOC2 ISO 27001 prompt injection DLP review"'
+  status: unverified
+
+- id: d5-hashicorp-vault
+  name: HashiCorp Vault
+  url: https://github.com/hashicorp/vault
+  kind: repo
+  domain: D5
+  what_it_is: Enterprise secret store. Vault Agent process-supervisor mode injects env_template secrets into a child process — the anti-pattern for LLM agents.
+  license: BUSL (source-available)
+  last_activity: 2026-09-18
+  maintainers: HashiCorp / IBM
+  runs_on: [linux-kvm, macos, cloud-only]
+  answers: [Q7]
+  fit: weak
+  fit_why: Breaks R4 (BUSL competing-product clause) if Claw ships Vault. Env injection puts secrets on the untrusted path (R6 fail). Fine as a *host* store behind a broker.
+  price: unknown
+  evidence:
+    - "https://developer.hashicorp.com/vault/docs/agent-and-proxy/agent/process-supervisor (env_template into exec child)"
+    - "https://github.com/hashicorp/vault/blob/main/command/agent/config/test-fixtures/config-env-templates-complex.hcl (SPDX BUSL-1.1)"
+    - "ran: gh repo view hashicorp/vault → license other, 36271 stars, pushed 2026-09-18"
+  tried: false
+  red_flags:
+    - BUSL-1.1 is not BRIEF R4 open source.
+    - Teaching clients to 'just use Vault Agent' will leak keys into the model context.
+  found_via: 'search:"HashiCorp Vault GitHub license BUSL agent secrets env injection"'
+  status: unverified
+
+- id: d5-dual-llm
+  name: Dual LLM pattern
+  url: https://simonwillison.net/2023/apr/25/dual-llm-pattern/
+  kind: pattern
+  domain: D5
+  what_it_is: Privileged LLM (tools, trusted user only) + quarantined LLM (untrusted content, no tools) + non-LLM controller holding opaque variables. CaMeL later shows remaining data-flow holes.
+  license: n/a
+  last_activity: 2023-04-25
+  maintainers: Simon Willison
+  runs_on: [unknown]
+  answers: [Q7, Q1]
+  fit: strong
+  fit_why: Maps to per-zone brains (Q1) without extra vendors. R8-friendly (controller is code). Incomplete vs attacker-controlled recipients (CaMeL critique).
+  price: n/a
+  evidence:
+    - "https://simonwillison.net/2023/apr/25/dual-llm-pattern/ (privileged vs quarantined; never forward Q output to P)"
+    - "https://simonwillison.net/2025/apr/11/camel/ (Dual LLM not enough if Q-LLM picks the email recipient)"
+  tried: false
+  red_flags:
+    - Utility loss; general ops agents hate opaque variables.
+    - Must not 'summarize for the privileged model' — that re-injects.
+  found_via: 'search:"Simon Willison dual LLM pattern privileged quarantined agent 2023"'
+  status: unverified
+
+- id: d5-github-mcp-toxic-flow
+  name: GitHub MCP toxic agent flow
+  url: https://invariantlabs.ai/blog/mcp-github-vulnerability
+  kind: pattern
+  domain: D5
+  what_it_is: Public issue injects the agent; same PAT reads private repos; exfil via public PR. GitHub later added sanitization and Lockdown mode, documented as not an authorization boundary.
+  license: MIT
+  last_activity: 2026-09-16
+  maintainers: GitHub (server); Invariant Labs (write-up)
+  runs_on: [unknown]
+  answers: [Q7, Q1]
+  fit: strong
+  fit_why: Concrete proof that one-agent+one-token fails R6. Argues for per-zone tokens and write approvals. github-mcp-server is MIT.
+  price: n/a
+  evidence:
+    - "https://invariantlabs.ai/blog/mcp-github-vulnerability (May 2025; not a server code bug)"
+    - "https://github.com/github/github-mcp-server/issues/844 (GitHub staff: lethal trifecta class; lockdown not a vuln fix)"
+    - "https://github.com/github/github-mcp-server/blob/HEAD/docs/server-configuration.md (lockdown is best-effort filter, not authz)"
+    - "ran: gh repo view github/github-mcp-server → MIT, 33079 stars, pushed 2026-09-16"
+  tried: false
+  red_flags:
+    - Content sanitization / Lockdown can be skipped via other tools using the same credential.
+    - Combining MCP servers recreates the trifecta even if each server is 'safe' alone.
+  found_via: 'search:"Invariant Labs GitHub MCP exploit prompt injection private repo leak"'
+  status: unverified
