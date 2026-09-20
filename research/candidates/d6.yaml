@@ -1,0 +1,735 @@
+# D6 commercial landscape — scout registry (status unverified; V1 fact-checks).
+# Template: swarm/templates/candidate.example.yaml. Seen dates: 2026-09-20.
+- id: d6-grok-bot
+  name: Grok Bot
+  url: https://docs.x.ai/grok-bot/overview
+  kind: product
+  domain: D6
+  what_it_is: >
+    Named persistent AI teammates with computer use. Each Cursor/xAI user gets one
+    Firecracker microVM; all of that user's Bots share files, browser sessions and
+    logins. Separate screens, not separate security boundaries. Sold as Cursor
+    (and SuperGrok/X Premium+ link), not as a self-hosted swarm. Target: individuals
+    and Cursor Teams/Enterprise knowledge-work orgs.
+  license: proprietary
+  last_activity: unknown
+  maintainers: Anysphere (Cursor) / xAI (branding)
+  runs_on: [cloud-only]
+  answers: [Q1, Q8]
+  fit: weak
+  fit_why: >
+    Closest product analogue to Claw, but R4/R2 fail as shipped: hosted US-only
+    computers, no on-prem/BYO image, bots are not isolation units. Human approvals
+    (Auto Review) exist; swarm is chat/handoff on one disk.
+  price: >
+    Included with Cursor Pro $20/mo, Pro+ $60/mo, Ultra $200/mo, Teams Standard
+    $40/user/mo, Teams Premium $120/user/mo; Enterprise custom
+    (https://cursor.com/help/account-and-billing/pricing.md and
+    https://cursor.com/pricing, seen 2026-09-20). Weekly included usage then
+    on-demand billed through Cursor (https://cursor.com/help/grok-bot/plans,
+    seen 2026-09-20). SuperGrok/X Premium+ can grant usage; x.ai/pricing was
+    Cloudflare-blocked (HTTP 403) this session so SuperGrok list prices unknown
+    from the vendor page.
+  evidence:
+    - "https://docs.x.ai/grok-bot/overview (Bots share one computer; included on paid Cursor)"
+    - "https://docs.x.ai/grok-bot/faq (Do my Bots share one computer? Yes. Do not use separate Bots as a security boundary.)"
+    - "https://docs.x.ai/grok-bot/teams-and-enterprises (one Firecracker microVM per user; all Bots share it)"
+    - "https://cursor.com/docs/grok-bot/security-faq (computers in the United States today; no on-prem / own image)"
+    - "https://forum.cursor.com/t/grokbot-security-isolation-prompt-injection-protection/169955 (users want per-bot OAuth isolation)"
+  tried: false
+  red_flags:
+    - "KNOWN-CONTEXT CONFIRMED: not one VM per bot; one VM per user shared by the roster."
+    - "No EU residency by default; Cursor US-only residency program does not apply to Grok Bot."
+    - "Self-serve Teams cannot set Network Controls (Enterprise only)."
+  found_via: seed
+  status: unverified
+
+- id: d6-orgo
+  name: Orgo
+  url: https://www.orgo.ai/pricing
+  kind: product
+  domain: D6
+  what_it_is: >
+    Persistent cloud desktops (Linux; Windows on Scale; Mac closed beta) for agents
+    (Hermes, OpenClaw, CUA models). One computer per slot you pay for — closer to
+    per-agent VM than Grok Bot. Target: solo builders and small agencies running
+    agent businesses; Enterprise for fleets.
+  license: proprietary (CLI skill MIT)
+  last_activity: unknown
+  maintainers: Organic Intelligence, Inc. (Y Combinator)
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: partial
+  fit_why: >
+    Sells the missing piece Grok Bot will not: a computer per agent, with live
+    screen. Still hosted; public API regions are US (auto-us/iad/sjc/lax). On-prem
+    only as Enterprise custom. Does not include swarm coordination.
+  price: >
+    Hacker $29/mo (1 computer, 8GB/40GB, Linux, $5 AI credit); Startup $99/mo
+    (4 computers); Scale $399/mo (16 computers, Linux+Windows); Enterprise custom
+    (60+ computers, Mac, shared/dedicated/on-prem)
+    (https://www.orgo.ai/pricing HTML, seen 2026-09-20). Stopped computers still
+    occupy a slot (https://docs.orgo.ai/guides/skill, seen 2026-09-20).
+  evidence:
+    - "https://www.orgo.ai/pricing (Hacker/Startup/Scale/Enterprise copy extracted 2026-09-20)"
+    - "https://docs.orgo.ai/llms.txt (not a browser, not an agent; bring Hermes/OpenClaw/CUA)"
+    - "https://docs.orgo.ai/llms-full.txt (create hardware.region: auto-us/iad/sjc/lax)"
+    - "ran: npx orgo@2.0.5 --help → commands; orgo computers list → Not signed in (no signup, RULES 15)"
+  tried: true
+  red_flags:
+    - "Public region enum is US metros only; EU residency not documented for self-serve."
+    - "Windows requires Scale; Mac closed beta."
+  found_via: seed
+  status: unverified
+
+- id: d6-e2b
+  name: E2B
+  url: https://e2b.dev/pricing
+  kind: product
+  domain: D6
+  what_it_is: >
+    Firecracker microVM sandboxes for running agent-generated code. One microVM
+    per session (not a standing desktop). Hobby/Pro cloud; Enterprise BYOC on
+    AWS/GCP; Embed is Apache-2.0 self-host on one Linux x86-64+KVM node. Target:
+    product companies embedding agents (Manus, Lindy, Genspark cited).
+  license: Apache-2.0 (runtime/SDK); cloud proprietary
+  last_activity: unknown
+  maintainers: E2B
+  runs_on: [cloud-only, linux-kvm]
+  answers: [Q2, Q8]
+  fit: partial
+  fit_why: >
+    Strong isolation and EU cloud regions; Embed matches R4 if you operate it.
+    Persistence is pause/snapshot, not a logged-in desktop. Hobby 1h session cap.
+    No GPU. Control plane still E2B on BYOC.
+  price: >
+    Hobby $0/mo + $100 one-time credits (20 concurrent, 1h sessions); Pro $150/mo
+    + usage (100 concurrent, 24h); Pro+ $650 / Pro++ $1150 concurrency add-ons;
+    Enterprise custom with $3000/mo usage minimum. Usage $0.000014/vCPU-s and
+    $0.0000045/GiB-s; storage included (https://e2b.dev/pricing, seen 2026-09-20).
+    Embed: no license fee published — own infra (https://e2b.dev/enterprise).
+  evidence:
+    - "https://e2b.dev/pricing (plans and per-second rates)"
+    - "https://e2b.dev/enterprise (Cloud US/EU/APAC; BYOC AWS/GCP; Embed OSS; private cloud in development)"
+    - "ran: git ls-remote https://github.com/e2b-dev/infra.git → exists"
+    - "ran: python3 e2b Sandbox.create() without key → AuthenticationException (no signup)"
+  tried: true
+  red_flags:
+    - "Users lack a persistent GUI computer; sessions time out (1h/24h) unlike Orgo/Grok Bot."
+    - "SSO/SCIM/RBAC listed as planned, not shipped, on the enterprise page."
+  found_via: seed
+  status: unverified
+
+- id: d6-daytona
+  name: Daytona
+  url: https://www.daytona.io/pricing
+  kind: product
+  domain: D6
+  what_it_is: >
+    Pay-as-you-go isolated sandboxes (Linux/Windows/GPU) for AI-generated code.
+    Built-in US and EU shared regions; BYOC runners with Daytona control plane
+    (Helm). Target: startups (credit program) and enterprises needing SSO/audit/BYOC.
+  license: proprietary (Helm charts on GitHub)
+  last_activity: unknown
+  maintainers: Daytona Platforms Inc.
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: partial
+  fit_why: >
+    EU region and customer-managed compute help Q8/residency, but the control
+    plane is still Daytona's. Not a multi-agent ops product; no Mac nested-virt story.
+  price: >
+    $200 free compute included; usage Compute $0.0504/vCPU-h, Memory $0.0162/GiB-h,
+    Storage $0.000108/GiB-h after first 5 GiB free; Windows $0.0858/vCPU-h; GPUs
+    from $0.57/h (RTX 4090) to $3.59/h (B200). Enterprise/BYOC contact sales
+    (https://www.daytona.io/pricing, seen 2026-09-20). Tier limits by verification
+    (https://www.daytona.io/docs/en/limits/).
+  evidence:
+    - "https://www.daytona.io/pricing (per-second billing, $200 credit, Windows/GPU rows)"
+    - "https://www.daytona.io/docs/en/bring-your-own-compute/ (US and EU shared regions; custom runners)"
+  tried: false
+  red_flags:
+    - "BYOC still uses Daytona SaaS control plane — not air-gapped self-host."
+    - "Concurrency gated by spend-verification tiers."
+  found_via: seed
+  status: unverified
+
+- id: d6-modal
+  name: Modal
+  url: https://modal.com/pricing
+  kind: product
+  domain: D6
+  what_it_is: >
+    Serverless Python compute plus Sandboxes for agents. Not a desktop/swarm product.
+    Target: ML/startup engineering teams. No self-host/BYOC.
+  license: proprietary
+  last_activity: unknown
+  maintainers: Modal
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: weak
+  fit_why: >
+    EU *compute* pin exists (paid multiplier) but logs, snapshots and durable
+    storage stay in the US — weak EU residency. No on-prem. Sandboxes billed at
+    a higher CPU rate than Functions.
+  price: >
+    Starter $0 plan fee + $30/mo free compute; Team $250/mo + $100 free compute;
+    Enterprise custom. CPU Functions $0.0000131/core/s; Sandbox CPU $0.00003942/core/s;
+    region pin 1.15–1.75× (https://modal.com/pricing, seen 2026-09-20).
+  evidence:
+    - "https://modal.com/pricing (Starter/Team $250/Enterprise; Sandbox CPU rate)"
+    - "https://modal.com/docs/guide/data-residency.md (US logs/storage; EU pin is compute only)"
+  tried: false
+  red_flags:
+    - "No BYOC; pinning EU does not move Volumes/Images/Secrets/logs out of the US."
+  found_via: seed
+  status: unverified
+
+- id: d6-browserbase
+  name: Browserbase
+  url: https://docs.browserbase.com/account/billing/plans
+  kind: product
+  domain: D6
+  what_it_is: >
+    Hosted browsers (1 browser per VM) for agents, with proxies and captcha.
+    EU (Germany) region and Enterprise BYOS/ZDR. Target: developers then Scale
+    compliance buyers. Not a full computer or agent team.
+  license: proprietary
+  last_activity: unknown
+  maintainers: Browserbase
+  runs_on: [cloud-only]
+  answers: [Q6, Q8]
+  fit: weak
+  fit_why: Browser-only; hosted. Useful comparison for computer-use, not Claw's VM swarm.
+  price: >
+    Free $0 (3 concurrent, 1 browser-hour); Developer $20/mo (100h, $0.12/h overage);
+    Startup $99/mo (500h, $0.10/h); Scale custom (SSO/HIPAA/DPA)
+    (https://docs.browserbase.com/account/billing/plans, seen 2026-09-20).
+  evidence:
+    - "https://docs.browserbase.com/account/billing/plans (plan table)"
+    - "https://docs.browserbase.com/account/enterprise/security (US/EU Germany/Asia; 1 browser per VM)"
+    - "https://docs.browserbase.com/account/enterprise/byos-setup-guide (Enterprise-only BYOS)"
+  tried: false
+  red_flags:
+    - "DPA/HIPAA/SSO only on Scale; session duration 15min–6h on self-serve."
+  found_via: seed
+  status: unverified
+
+- id: d6-anthropic-managed-agents
+  name: Claude Managed Agents
+  url: https://platform.claude.com/docs/en/managed-agents/overview
+  kind: product
+  domain: D6
+  what_it_is: >
+    Beta hosted agent harness (sandbox, tools, sessions) plus optional self-hosted
+    sandbox on customer infra. Computer-use on the Messages API is a client-side
+    tool (you bring the desktop). Target: API builders, not SMEs buying a swarm.
+  license: proprietary
+  last_activity: unknown
+  maintainers: Anthropic
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: partial
+  fit_why: >
+    Self-hosted sandbox option is the interesting Q8 bit. Stateful Managed Agents
+    are not ZDR/HIPAA eligible. Model lock-in vs R8 DeepSeek.
+  price: >
+    Standard Claude token rates + $0.08 per session-hour while status=running;
+    idle/rescheduling/terminated free; web search $10/1k; US inference_geo 1.1×
+    tokens (https://docs.anthropic.com/en/docs/about-claude/pricing, seen 2026-09-20).
+    Computer-use tool has no extra click fee (token overhead ~4.5k input).
+  evidence:
+    - "https://platform.claude.com/docs/en/managed-agents/overview (cloud or self-hosted sandbox; beta managed-agents-2026-04-01)"
+    - "https://docs.anthropic.com/en/docs/about-claude/pricing (Managed Agents SKU $0.08/session-hour)"
+  tried: false
+  red_flags:
+    - "Not eligible for Zero Data Retention or HIPAA BAA because sessions persist server-side."
+    - "Claude-only brain — conflicts with R8 unless used only as a reference architecture."
+  found_via: seed
+  status: unverified
+
+- id: d6-openai-chatgpt-agents
+  name: ChatGPT Work / Codex (ex-Operator, ex-ChatGPT agent)
+  url: https://openai.com/index/introducing-operator/
+  kind: product
+  domain: D6
+  what_it_is: >
+    OpenAI's consumer/team agents. Operator (Jan 2025) merged into ChatGPT agent
+    (Jul 2025); help.openai.com now says ChatGPT agent is gone and to use ChatGPT
+    Work plus cloud browser; Codex remains the coding agent. Hosted virtual
+    browser, not a customer-owned VM fleet. Target: consumers (Plus/Pro) and
+    Business/Enterprise workspaces.
+  license: proprietary
+  last_activity: unknown
+  maintainers: OpenAI
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: weak
+  fit_why: Hosted, closed, frontier-model. EU residency exists for Enterprise agent mode; no self-host. Names keep changing.
+  price: >
+    ChatGPT Go $8/mo, Plus $20/mo, Pro $200/mo (https://openai.com/index/introducing-chatgpt-go/,
+    Jan 2026; Plus restated https://help.openai.com/en/articles/6950777). Help also
+    describes Pro $100 (5×) and Pro $200 (20×). Business Standard $25/user/mo monthly
+    or $20 annual; Premium $125/$100 (https://help.openai.com/en/articles/8792828-what-is-chatgpt-business,
+    seen 2026-09-20). chatgpt.com/pricing was Cloudflare/JS blocked (403) this session.
+    Legacy agent-mode caps on the same help page Plus 40 / Pro 400 msgs/mo — treat
+    as stale if Work replaced agent.
+  evidence:
+    - "https://openai.com/index/introducing-operator/ (17 Jul 2025: Operator → ChatGPT agent; operator.chatgpt.com sunsets)"
+    - "https://help.openai.com/en/articles/11752874-chatgpt-agent (updated ~2026-09-15: agent no longer available; use Work; EU residency for Enterprise)"
+    - "https://help.openai.com/en/articles/8792828-what-is-chatgpt-business (seat prices)"
+  tried: false
+  red_flags:
+    - "Product name churn (Operator → agent → Work) makes procurement quotes stale."
+    - "No self-host; cookies persist on the virtual browser; prompt-injection residual risk admitted in help."
+  found_via: seed
+  status: unverified
+
+- id: d6-manus
+  name: Manus
+  url: https://manus.im/pricing
+  kind: product
+  domain: D6
+  what_it_is: >
+    General cloud agent (browser + tools on a full machine; E2B case study).
+    Cloud-only; US/Singapore residency reported by third parties. Target:
+    individuals (research/slides) and Team seats (SSO).
+  license: proprietary
+  last_activity: unknown
+  maintainers: Manus AI / Butterfly Effect
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: weak
+  fit_why: Hosted general agent, not self-hosted swarm. Credit burn is the user complaint.
+  price: >
+    Vendor help (updated 2026-03-16): Free $0 (300 daily credits, 1 concurrent);
+    Pro from $20/mo (from 4,000 credits) and $40/mo (from 8,000, 7-day trial);
+    Team from $20/seat/mo; annual ~17% off
+    (https://help.manus.im/en/articles/11711111-what-is-the-current-membership-pricing-for-manus).
+    Live https://manus.im/pricing is JS and did not expose numbers in this fetch —
+    checkout is canonical; help says subject to the pricing page.
+  evidence:
+    - "https://help.manus.im/en/articles/11711111-what-is-the-current-membership-pricing-for-manus"
+    - "https://e2b.dev/enterprise (Manus cited as production E2B customer)"
+    - "https://news.ycombinator.com/item?id=49258764 (credit system expensive; ~$40 one task)"
+  tried: false
+  red_flags:
+    - "No self-host. 2026 HN thread: unpredictable credits; Meta acquisition unwind / data-deletion window."
+  found_via: seed
+  status: unverified
+
+- id: d6-lindy
+  name: Lindy
+  url: https://docs.lindy.ai/pricing
+  kind: product
+  domain: D6
+  what_it_is: >
+    Slack-native AI teammate for inbox/meetings/integrations; computer use on
+    higher plans. Cloud-only. Target: US SMBs then Enterprise (SSO/SCIM/HIPAA).
+  license: proprietary
+  last_activity: unknown
+  maintainers: Lindy
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: weak
+  fit_why: Sells agent *teams* as SaaS seats, not hardware-isolated computers. No on-prem.
+  price: >
+    Plus $30/user/mo (3,000 credits); Pro $100 (15,000); Max $200 (35,000);
+    Enterprise custom; top-ups $10 per 1,000 credits
+    (https://docs.lindy.ai/pricing, seen 2026-09-20). Credits ~1 cent; no rollover
+    of plan credits. SOC2/GDPR claimed; residency region not published on /security.
+  evidence:
+    - "https://docs.lindy.ai/pricing (per-user pooled credits; computer use on plan table)"
+    - "https://www.lindy.ai/security (SOC 2 Type II; residency 'supported' without a region list)"
+  tried: false
+  red_flags:
+    - "No self-host. Public security page does not name EU vs US storage."
+  found_via: seed
+  status: unverified
+
+- id: d6-relevance-ai
+  name: Relevance AI
+  url: https://relevanceai.com/docs/get-started/pricing
+  kind: product
+  domain: D6
+  what_it_is: >
+    GTM "AI workforce" builder (agents, tools, escalations). Multi-region listed
+    for Enterprise. Target: solo GTM ops (Pro) to org-wide (Enterprise). Not a VM.
+  license: proprietary
+  last_activity: unknown
+  maintainers: Relevance AI
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: weak
+  fit_why: Workflow agents in a SaaS app, not persistent computers. SSO only on Enterprise.
+  price: >
+    Free retired for new signups. Pro $19/mo annual or $29 monthly (2,500 Actions);
+    Team $234/mo annual or $349 monthly (7,000 Actions); Enterprise custom.
+    Action top-ups $80/1,000; Vendor Credits $20/10,000
+    (https://relevanceai.com/docs/get-started/pricing, seen 2026-09-20).
+  evidence:
+    - "https://relevanceai.com/docs/get-started/pricing (Pro/Team/Enterprise; SOC2 & GDPR on all paid)"
+  tried: false
+  red_flags:
+    - "On-prem not offered. Multi-region is Enterprise sales, not a self-serve EU toggle."
+  found_via: seed
+  status: unverified
+
+- id: d6-devin
+  name: Devin (Cognition)
+  url: https://cognition.com/blog/new-self-serve-plans-for-devin
+  kind: product
+  domain: D6
+  what_it_is: >
+    Autonomous software engineer with a per-session Devbox VM. Enterprise Cloud
+    (multi-tenant) or customer-dedicated VPC (PrivateLink). Air-gap "being
+    finalized". Target: software orgs, not general ops swarms.
+  license: proprietary
+  last_activity: "2026-04-14"
+  maintainers: Cognition
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: weak
+  fit_why: Coding-agent SaaS. Isolation is per-session VM, not a self-hosted swarm. R4 fails.
+  price: >
+    Self-serve (blog 2026-04-14): Free; Pro $20/mo; Max $200/mo; Teams usage with
+    $80/mo minimum; Enterprise custom ACUs
+    (https://cognition.com/blog/new-self-serve-plans-for-devin, seen 2026-09-20).
+    Enterprise ACU rate is order-form only
+    (https://docs.devinenterprise.com/admin/billing/enterprise).
+  evidence:
+    - "https://cognition.com/blog/new-self-serve-plans-for-devin"
+    - "https://docs.devinenterprise.com/enterprise/deployment/overview (Enterprise Cloud vs dedicated VPC; not customer-operated on-prem)"
+    - "https://news.ycombinator.com/item?id=46711589 (ACUs opaque)"
+  tried: false
+  red_flags:
+    - "Users complain ACU metering is hard to forecast."
+    - "True on-prem listed as not generally available."
+  found_via: 'search:"Devin Cognition AI pricing 2026 per seat on-prem EU"'
+  status: unverified
+
+- id: d6-agentforce
+  name: Salesforce Agentforce
+  url: https://www.salesforce.com/agentforce/pricing/
+  kind: product
+  domain: D6
+  what_it_is: >
+    CRM-grounded employee and customer agents. Cloud/Hyperforce only (regional
+    residency, not customer-hosted). Target: existing Salesforce enterprises.
+  license: proprietary
+  last_activity: unknown
+  maintainers: Salesforce
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: weak
+  fit_why: Wrong buyer and lock-in. Shows how enterprises already buy "agent teams" without computers.
+  price: >
+    Foundations $0; Flex Credits $500 per 100k credits (20 credits/action → $0.10/action);
+    Conversations $2 per conversation; Agentforce User License $5/user/mo;
+    Flat-fee add-on $125/user/mo (https://www.salesforce.com/agentforce/pricing/,
+    seen 2026-09-20). Unused Flex Credits do not roll over.
+  evidence:
+    - "https://www.salesforce.com/agentforce/pricing/ (Flex Credits, Conversations, $125 add-on)"
+  tried: false
+  red_flags:
+    - "No on-prem. Conversation vs Flex cannot mix in one org. Cost scales with every action."
+  found_via: 'search:"Salesforce Agentforce pricing per conversation 2026 on-prem"'
+  status: unverified
+
+- id: d6-gemini-agent-platform
+  name: Gemini Enterprise Agent Platform
+  url: https://cloud.google.com/products/gemini-enterprise-agent-platform/pricing
+  kind: product
+  domain: D6
+  what_it_is: >
+    Google Cloud successor to Vertex AI Agent Builder: ADK, Agent Studio, managed
+    Agents API sandboxes. Target: GCP enterprises. Regions follow Google Cloud
+    (EU possible as Cloud regions, not air-gap).
+  license: proprietary
+  last_activity: unknown
+  maintainers: Google Cloud
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: weak
+  fit_why: Hyperscaler control plane. Useful as "how big vendors meter agent compute", not Claw.
+  price: >
+    Agent Compute $0.085/vCPU-h after 50 free h/account/month; Memory $0.009/GiB-h
+    after 100 GiB-h free (https://cloud.google.com/products/gemini-enterprise-agent-platform/pricing,
+    seen 2026-09-20). Gemini Enterprise *seats* are separate SKUs (third-party
+    roundups $21–$50/user; not re-verified on a seat pricing page this session).
+  evidence:
+    - "https://cloud.google.com/products/gemini-enterprise-agent-platform/pricing"
+    - "https://docs.cloud.google.com/gemini-enterprise-agent-platform/overview (Agent Builder evolution)"
+  tried: false
+  red_flags:
+    - "No self-host of the platform. Seat vs compute SKUs easy to double-count."
+  found_via: 'search:"Google Vertex AI Agent Builder Agentspace pricing 2026 EU"'
+  status: unverified
+
+- id: d6-replit-agent
+  name: Replit Agent
+  url: https://replit.com/pricing
+  kind: product
+  domain: D6
+  what_it_is: >
+    In-browser app-building agent with parallel cloud agents. Enterprise can buy
+    single-tenant GCP. Target: builders and small teams, then IT (SSO/SCIM).
+  license: proprietary
+  last_activity: unknown
+  maintainers: Replit
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: weak
+  fit_why: Hosted coding/product agent, not ops swarm with hardware isolation you control.
+  price: >
+    Starter free; Core $20/mo ($18/mo annual on page); Pro $100/mo ($90–$95 annual
+    depending on module); Enterprise custom, usage-based, optional single-tenant
+    (https://replit.com/pricing, seen 2026-09-20; https://replit.com/enterprise).
+  evidence:
+    - "https://replit.com/pricing"
+    - "https://replit.com/blog/pro-plan (Teams sunset → Pro $100, Core $20, Mar 2026)"
+  tried: false
+  red_flags:
+    - "Effort-based credits; users hit surprise bills. Not EU-sovereign by default."
+  found_via: 'search:"Replit Agent pricing 2026 Core Team Enterprise"'
+  status: unverified
+
+- id: d6-factory-droid
+  name: Factory Droids
+  url: https://factory.ai/pricing
+  kind: product
+  domain: D6
+  what_it_is: >
+    Software-engineering agents (desktop/CLI/SDK) with Factory-managed "Droid
+    Computers" from Plus up. Enterprise lists on-prem and data residency.
+    Target: engineering teams.
+  license: proprietary
+  last_activity: unknown
+  maintainers: Factory
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: partial
+  fit_why: One of few coding-agent vendors that *lists* on-prem on the public pricing page. Still not an ops swarm; R4 unverified (proprietary).
+  price: >
+    Pro $20/mo; Plus $100/mo (~5× usage + Droid Computers); Max $200/mo;
+    Teams $60/mo per team + $40/seat (≤10 seats); Business/Enterprise custom
+    (https://factory.ai/pricing, seen 2026-09-20; redirects to factory.com).
+  evidence:
+    - "https://factory.ai/pricing (Droid Computers on Plus; Enterprise on-premise + residency)"
+    - "https://docs.factory.ai/pricing/individuals"
+  tried: false
+  red_flags:
+    - "On-prem is Enterprise sales-only; no public architecture or price."
+  found_via: 'search:"Factory AI droids pricing 2026 MultiOn Adept acquired"'
+  status: unverified
+
+- id: d6-agi-0-multion
+  name: AGI-0 (formerly MultiOn)
+  url: https://theagi.company/
+  kind: product
+  domain: D6
+  what_it_is: >
+    MultiOn's browser-agent API is gone; brand is now AGI, Inc. AGI-0 is an
+    on-device mobile/computer action agent (waitlist). Target: device OEMs
+    (Qualcomm/Lenovo quotes) not cloud agent teams.
+  license: proprietary
+  last_activity: unknown
+  maintainers: AGI, Inc.
+  runs_on: [unknown]
+  answers: [Q8]
+  fit: weak
+  fit_why: Adjacent "agent that uses apps" but on-device, not a server swarm you host.
+  price: >
+    unknown — no public list price on https://theagi.company/ (seen 2026-09-20);
+    access is waitlist / contact. Legacy MultiOn per-request API pricing is obsolete.
+  evidence:
+    - "https://theagi.company/ (AGI-0 on-device; no pricing)"
+    - "https://www.usagepricing.com/blueprint/multion (post-mortem: multion.ai 301 to theagi.company)"
+  tried: false
+  red_flags:
+    - "Do not design against MultiOn API; it is not a current vendor for cloud computers."
+  found_via: 'search:"MultiOn AI agent 2026 still exists pricing"'
+  status: unverified
+
+- id: d6-adept
+  name: Adept
+  url: https://www.adept.ai/blog/adept-update/
+  kind: product
+  domain: D6
+  what_it_is: >
+    Former enterprise computer-use agent startup. June 2024: founders and staff
+    joined Amazon AGI; Amazon licensed models/data. Not a 2026 buyable agent-computer
+    product in public materials this session (site Cloudflare-blocked).
+  license: proprietary
+  last_activity: "2024-06-28"
+  maintainers: Adept remainder / Amazon (licensed tech)
+  runs_on: [unknown]
+  answers: [Q8]
+  fit: weak
+  fit_why: "Cautionary — computer-use startups get acqui-hired; do not assume Adept as a live alternative."
+  price: unknown — product not publicly sold; vendor homepage HTTP 403 Cloudflare on 2026-09-20.
+  evidence:
+    - "https://techcrunch.com/2024/06/28/amazon-hires-founders-away-from-ai-startup-adept/"
+    - "https://www.adept.ai/blog/adept-update/ (URL exists; fetch blocked by Cloudflare this session)"
+  tried: false
+  red_flags:
+    - "Treat as exited, not a competitor to quote in a 2026 bake-off."
+  found_via: 'search:"Factory AI droids pricing 2026 MultiOn Adept acquired"'
+  status: unverified
+
+- id: d6-uipath-agents
+  name: UiPath Agents (Automation Suite)
+  url: https://www.uipath.com/product/automation-suite
+  kind: product
+  domain: D6
+  what_it_is: >
+    WILDCARD (RPA): Maestro + Agent Builder on customer Kubernetes (AKS/EKS/OpenShift)
+    as of Automation Suite 2.2510.2 (2026-04-15). Self-hosted LLMs allowed. Target:
+    public sector and regulated enterprises, not MacBook swarms.
+  license: proprietary
+  last_activity: "2026-04-15"
+  maintainers: UiPath
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: partial
+  fit_why: >
+    Proves enterprises will pay for *on-prem agent orchestration*. Too heavy for R1
+    (MacBook afternoon). Price opaque. Differentiation vs UiPath: Claw is small,
+    OSS, hardware-isolated agent computers for SMEs.
+  price: >
+    unknown list — Enterprise Unified Pricing / Flex; agent runs consume Platform
+    Units (e.g. 0.2 PU per LLM call on standard hosted models)
+    (https://docs.uipath.com/agents/automation-suite/2.2510/user-guide/licensing,
+    seen 2026-09-20). Contact sales for $; no public SKU dollar amounts.
+  evidence:
+    - "https://www.uipath.com/product/automation-suite"
+    - "https://www.uipath.com/newsroom/uipath-automation-suite-delivers-agentic-ai-for-public-sector"
+    - "https://docs.uipath.com/agents/automation-suite/2.2510/release-notes/2-2510-2"
+  tried: false
+  red_flags:
+    - "Linux/bare-metal agentic stack called out as later (Oct 2026 plan). Negotiation-only price."
+  found_via: 'search:"UiPath Agent Builder Maestro pricing 2026 on-prem EU"'
+  status: unverified
+
+- id: d6-hetzner-cloud
+  name: Hetzner Cloud (VPS)
+  url: https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/
+  kind: product
+  domain: D6
+  what_it_is: >
+    WILDCARD (EU VPS): cheap GDPR-jurisdiction VMs people already use as DIY
+    agent boxes (Orgo's own migration docs name Hetzner). Not an agent product —
+    just computers. Locations DE/FI/US/SG. Target: developers and EU SMEs.
+  license: proprietary (IaaS)
+  last_activity: "2026-07-08"
+  maintainers: Hetzner Online
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: partial
+  fit_why: >
+    Price/residency floor for "one Linux box per agent". You still build isolation,
+    desktop, approvals, swarm. Gap Claw can own: Orgo UX + E2B isolation on
+    hardware you pick (including Hetzner).
+  price: >
+    Germany/Finland excl VAT excl IPv4, new orders since 2026-06-15: CX23 €5.49/mo
+    (€0.0088/h), CX33 €8.49/mo; CAX11 €5.99/mo; CPX22 €19.49/mo; CCX13 €42.99/mo
+    (https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/,
+    seen 2026-09-20). Cost-Optimized CX23 listed "not available" on
+    https://www.hetzner.com/cloud/cost-optimized/ the same day.
+  evidence:
+    - "https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/"
+    - "https://www.hetzner.com/cloud/ (GDPR, DE/FI ISO 27001, 99.9% SLA)"
+    - "https://docs.orgo.ai/llms.txt (migrate from Hetzner guide exists)"
+  tried: false
+  red_flags:
+    - "No agent runtime. Cheap SKUs can be stocked-out. You manage OS/firewall/VNC."
+  found_via: 'search:"Hetzner Cloud CX23 CX33 pricing 2026 EU data center VPS"'
+  status: unverified
+
+- id: d6-copilot-studio
+  name: Microsoft Copilot Studio
+  url: https://www.microsoft.com/en-us/microsoft-365-copilot/pricing/copilot-studio
+  kind: product
+  domain: D6
+  what_it_is: >
+    Tenant-wide low-code agents over M365/Power Platform. On-prem data via gateway,
+    not on-prem agents. Target: Microsoft estates.
+  license: proprietary
+  last_activity: unknown
+  maintainers: Microsoft
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: weak
+  fit_why: Incumbent "agent team" for Office shops. No hardware VM per agent you control.
+  price: >
+    Copilot Credit pack $200/pack/month billed annually = 25,000 credits; PAYG
+    $0.01/credit via Azure (https://www.microsoft.com/en-us/microsoft-365-copilot/pricing/copilot-studio
+    and June 2026 licensing guide). Example rates: generative answer 2 credits,
+    agent action 5 (https://learn.microsoft.com/en-us/microsoft-copilot-studio/requirements-messages-management).
+  evidence:
+    - "https://www.microsoft.com/en-us/microsoft-365-copilot/pricing/copilot-studio"
+    - "https://learn.microsoft.com/en-us/microsoft-copilot-studio/requirements-messages-management"
+  tried: false
+  red_flags:
+    - "Unused monthly packs do not roll. Meter is inscrutable vs a VM invoice."
+  found_via: 'search:"Microsoft Copilot Studio agent pricing 2026 messages credits on-prem"'
+  status: unverified
+
+- id: d6-runloop
+  name: Runloop
+  url: https://runloop.ai/pricing
+  kind: product
+  domain: D6
+  what_it_is: >
+    Devbox sandboxes + evals for coding agents. Enterprise VPC deploy. Target:
+    teams productionizing SWE agents (not ops).
+  license: proprietary
+  last_activity: unknown
+  maintainers: Runloop
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: weak
+  fit_why: Another hosted microVM. Price/hour is high vs E2B/Daytona. VPC is Enterprise.
+  price: >
+    Basic free + usage ($50 trial credit); Pro $250/mo + usage; Enterprise custom
+    (VPC). Devbox CPU $0.108/CPU-h, memory $0.0252/GB-h; suspended compute $0
+    (https://runloop.ai/pricing, seen 2026-09-20).
+  evidence:
+    - "https://runloop.ai/pricing"
+  tried: false
+  red_flags:
+    - "Roughly 2× Daytona/E2B-like hourly CPU. No public EU pin called out on the pricing page."
+  found_via: 'search:"Runloop AI sandbox pricing 2026 Morph Labs computer"'
+  status: unverified
+
+- id: d6-bedrock-agentcore
+  name: Amazon Bedrock AgentCore
+  url: https://aws.amazon.com/bedrock/agentcore/pricing/
+  kind: product
+  domain: D6
+  what_it_is: >
+    AWS-managed agent runtime: Firecracker microVMs per session (up to 8h) or
+    EC2 instances in the customer account (up to 14d) + browser/code interpreter
+    tools. Regions/GovCloud; no customer-operated air-gap. Target: AWS builders.
+  license: proprietary
+  last_activity: unknown
+  maintainers: Amazon Web Services
+  runs_on: [cloud-only]
+  answers: [Q8]
+  fit: partial
+  fit_why: >
+    Per-session hardware isolation is the hyperscaler version of R2. Instances-in-your-account
+    is a Q8 pattern (vendor control plane, customer data plane). Still not OSS/self-host on a Mac.
+  price: >
+    Runtime microVM v1 CPU $0.0895/vCPU-h, memory $0.00945/GB-h; Browser Tool and
+    Code Interpreter same CPU/memory rates; Gateway $0.005/1k invocations
+    (https://aws.amazon.com/bedrock/agentcore/pricing/, seen 2026-09-20).
+    Instances = EC2 + management fee. No seat fee.
+  evidence:
+    - "https://aws.amazon.com/bedrock/agentcore/pricing/"
+    - "https://aws.amazon.com/bedrock/agentcore/faqs/ (microVM 8h vs instances 14d)"
+  tried: false
+  red_flags:
+    - "AWS-only. Idle microVM CPU can be unbilled during I/O wait — cost model unlike always-on Orgo."
+  found_via: 'search:"Amazon Bedrock AgentCore agents pricing 2026 on-prem"'
+  status: unverified
