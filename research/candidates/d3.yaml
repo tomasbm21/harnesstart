@@ -1,0 +1,600 @@
+# D3 · computer use, browsers, screens (fortress lens) · 2026-09-20 · status unverified
+# Q6: how does an agent use its computer (headless browser, full desktop, both), and how does Tomas watch and take over?
+- id: d3-cua
+  name: Cua (trycua/cua)
+  url: https://github.com/trycua/cua
+  kind: repo
+  domain: D3
+  what_it_is: Open-source computer-use stack (cua-driver, cua-agent, sandboxes, Lume). Background click/type/screenshot on macOS, Windows, Linux without stealing the OS cursor.
+  license: MIT
+  last_activity: 2026-09-19
+  maintainers: trycua
+  runs_on: [macos, linux, unknown]
+  answers: [Q6]
+  fit: partial
+  fit_why: Strong desktop fidelity and a no-foreground contract; Linux still depends on AT-SPI + a live display (Xvfb or XWayland). Driver on the host desktop would punch R2; belongs inside the agent VM. Default Lume SSH user lume/lume is a fortress fail.
+  price: n/a
+  evidence:
+    - "https://github.com/trycua/cua (gh 2026-09-20: MIT, 24889 stars, pushed 2026-09-20)"
+    - "https://cua.ai/docs/how-to-guides/driver/run-in-macos-lume-vm (driver in guest vs host-over-SSH)"
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/computer-use (Linux AT-SPI + XTest/virtual-keyboard; headless needs Xvfb)"
+  tried: false
+  red_flags:
+    - "Unattended macOS presets default to SSH user lume / lume (cua.ai Lume docs)."
+    - "Linux capture needs a display + AT-SPI session bus; that bus can read every window including password fields."
+    - "Host-side cua-driver would let a prompted agent drive Tomas's Mac, not the isolated VM."
+  found_via: seed
+  status: unverified
+
+- id: d3-lume
+  name: Lume
+  url: https://github.com/trycua/cua
+  kind: repo
+  domain: D3
+  what_it_is: Apple Virtualization.framework CLI (now in the cua monorepo at libs/lume) for macOS/Linux VMs on Apple Silicon. Native viewer plus a VNC server that docs say remains available unless --vnc disabled.
+  license: MIT
+  last_activity: 2026-09-19
+  maintainers: trycua
+  runs_on: [nested-apple-silicon, macos]
+  answers: [Q2, Q6]
+  fit: partial
+  fit_why: Useful as the Mac-side VM+VNC watch path (R1), not as the in-guest computer-use layer. VNC URL embeds a password (vnc://:password@127.0.0.1:port). Nested virt for Linux guests is macOS 15+ only. Does not run inside claw-host.
+  price: n/a
+  evidence:
+    - "https://github.com/trycua/lume redirects to trycua/cua (gh 2026-09-20)"
+    - "https://raw.githubusercontent.com/trycua/cua/main/libs/lume/README.md (Virtualization.Framework; unattended lume/lume)"
+    - "https://cua.ai/docs/reference/lume/cli-reference (--display vnc|native|none; --vnc enabled|disabled; VNC remains available in every display mode unless disabled)"
+    - "https://github.com/trycua/cua/blob/main/libs/lume/src/LumeController.swift (parses vnc://:password@127.0.0.1:port)"
+  tried: false
+  red_flags:
+    - "Default guest credentials lume/lume plus autologin and sleep/lock disabled."
+    - "VNC listener is on by default; password travels in the vnc:// URL."
+    - "Host-only: cannot provide the Linux-box path of R1 by itself."
+  found_via: seed
+  status: unverified
+
+- id: d3-browser-use
+  name: Browser Use
+  url: https://github.com/browser-use/browser-use
+  kind: repo
+  domain: D3
+  what_it_is: Agent browser framework. Drives Chromium over CDP; supports user_data_dir, storage_state, keep_alive, and cdp_url attach. Cloud product adds live previews, proxies, stealth, CAPTCHA.
+  license: MIT
+  last_activity: 2026-09-15
+  maintainers: browser-use
+  runs_on: [linux, macos, cloud-only]
+  answers: [Q6]
+  fit: partial
+  fit_why: Best-in-class OSS agent-browser loop and the incumbent Hermes driver. Persistent logins are a Chrome profile on disk (R3) but that file is a session-theft blob. Cloud CAPTCHA/stealth is a hosted plane (R4). disable_security exists and is documented as not recommended.
+  price: "OSS n/a; Browser Use Cloud paid (no trial run, RULES 15). Source: https://github.com/browser-use/browser-harness README, seen 2026-09-20."
+  evidence:
+    - "https://github.com/browser-use/browser-use (gh 2026-09-20: MIT, 115463 stars, pushed 2026-09-18)"
+    - "https://docs.browser-use.com/open-source/customize/browser/all-parameters (cdp_url, user_data_dir, storage_state, disable_security=False default, chromium_sandbox)"
+    - "https://github.com/browser-use/browser-harness (local CDP websocket; cloud for stealth/CAPTCHA)"
+  tried: false
+  red_flags:
+    - "A live cdp_url is full browser control with no protocol auth."
+    - "Cloud CAPTCHA solving is not the self-hosted path."
+    - "Sharing one Chrome over CDP isolates tabs, not cookies."
+  found_via: seed
+  status: unverified
+
+- id: d3-playwright
+  name: Playwright
+  url: https://github.com/microsoft/playwright
+  kind: repo
+  domain: D3
+  what_it_is: Browser automation (Chromium/Firefox/WebKit). Persistent logins via launchPersistentContext(userDataDir) or storageState JSON; can attach with connectOverCDP.
+  license: Apache-2.0
+  last_activity: 2026-09-18
+  maintainers: Microsoft
+  runs_on: [linux, macos]
+  answers: [Q6]
+  fit: strong
+  fit_why: Mature, permissive, self-hosted. storageState and user-data-dir are the realistic R3 mechanism. Chrome 136+ will not debug the default profile. Does not itself provide desktop or human takeover; pair with a headed session + gateway.
+  price: n/a
+  evidence:
+    - "https://github.com/microsoft/playwright (gh 2026-09-20: Apache-2.0, 96401 stars, pushed 2026-09-20)"
+    - "https://playwright.dev/docs/auth (storageState is impersonation-capable; do not commit; sessionStorage not persisted by default)"
+    - "https://github.com/microsoft/playwright/issues/10725 (connectOverCDP + launchPersistentContext)"
+    - "https://playwright.dev/dotnet/docs/next/api/class-browsertype (default Chrome profile not automatable after Chrome policy change)"
+  tried: false
+  red_flags:
+    - "storageState JSON is a credential."
+    - "Playwright-launched Chromium is routinely flagged by Cloudflare Turnstile; attaching to a human-started Chrome over CDP often is not (anecdotal 2026 write-up, not a guarantee)."
+  found_via: seed
+  status: unverified
+
+- id: d3-cdp
+  name: Chrome DevTools Protocol
+  url: https://github.com/ChromeDevTools/devtools-protocol
+  kind: protocol
+  domain: D3
+  what_it_is: Unauthenticated JSON-RPC over WebSocket that fully controls a Chromium browser (DOM, cookies, network, JS). HTTP /json/version has no login.
+  license: BSD-3-Clause
+  last_activity: 2026-09-19
+  maintainers: ChromeDevTools
+  runs_on: [linux, macos]
+  answers: [Q6, Q7]
+  fit: partial
+  fit_why: The actual control plane for almost every agent browser. Must stay on guest loopback and be brokered; exposing it is equivalent to handing over the logged-in session (R6/R7 fail).
+  price: n/a
+  evidence:
+    - "https://github.com/ChromeDevTools/devtools-protocol (gh 2026-09-20: BSD-3-Clause, pushed 2026-09-19)"
+    - "https://developer.chrome.com/blog/remote-debugging-port (Chrome 136+: --remote-debugging-port ignored on the default user-data-dir because infostealers used it for cookies)"
+    - "ran: google-chrome --headless=new --user-data-dir=/tmp/claw-d3-rss --remote-debugging-port=9333 → curl http://127.0.0.1:9333/json/version returned Protocol-Version 1.3 and a ws:// URL; netstat showed LISTEN 127.0.0.1:9333 only"
+  tried: true
+  red_flags:
+    - "No authentication on the DevTools HTTP/WebSocket server."
+    - "Anyone who can reach the port can read cookies and run JS in every tab."
+    - "Chrome 148 still prints 'DevTools remote debugging requires a non-default data directory' if user-data-dir is omitted."
+  found_via: seed
+  status: unverified
+
+- id: d3-steel
+  name: Steel Browser
+  url: https://github.com/steel-dev/steel-browser
+  kind: repo
+  domain: D3
+  what_it_is: Self-hostable browser API (Puppeteer/CDP) with session UI. Docker publishes API :3000 and Chrome debugger :9223. Cloud adds profiles, stealth, paid CAPTCHA.
+  license: Apache-2.0
+  last_activity: 2026-09-16
+  maintainers: steel-dev
+  runs_on: [linux, cloud-only]
+  answers: [Q6]
+  fit: partial
+  fit_why: Matches 'watch the browser' (UI at /ui) and persistent .cache user-data. Self-host docs require 4GB RAM and warn not to expose 9223. CAPTCHA auto-solve is a paid Steel plan, so anti-bot on the OSS path is stealth flags, not a solver.
+  price: "OSS Apache-2.0 self-host n/a; CAPTCHA solving requires a paid Steel plan (steel-dev/cli docs, seen 2026-09-20). Cloud dollar amounts not recorded (no signup)."
+  evidence:
+    - "https://github.com/steel-dev/steel-browser (gh 2026-09-20: Apache-2.0, 7671 stars, pushed 2026-09-16)"
+    - "https://docs.steel.dev/overview/self-hosting/docker (4GB RAM min; ports 3000+9223; 'Avoid exposing the Chrome debugging port (9223)'; .cache volume for persistence; prod example memory limit 2G)"
+    - "https://steel.dev/blog/profiles (profile = snapshot of user-data-dir: cookies, extensions, credentials)"
+    - "https://github.com/steel-dev/cli/blob/main/docs/references/steel-browser.md (CAPTCHA solving requires a paid Steel plan)"
+  tried: false
+  red_flags:
+    - "Default docker run publishes CDP 9223 to the host."
+    - "Paid CAPTCHA plane vs OSS self-host split (R4)."
+    - "Profiles store credentials; treat storage as secret material."
+  found_via: seed
+  status: unverified
+
+- id: d3-novnc
+  name: noVNC
+  url: https://github.com/novnc/noVNC
+  kind: repo
+  domain: D3
+  what_it_is: In-browser VNC client (HTML5). Typical takeover UX for a full desktop. Core JS is MPL-2.0; project license metadata is NOASSERTION.
+  license: MPL-2.0
+  last_activity: 2026-09-07
+  maintainers: novnc
+  runs_on: [linux, macos]
+  answers: [Q6]
+  fit: strong
+  fit_why: The standard 'Tomas opens a tab and grabs mouse/keyboard' piece. Must sit behind TLS + short-lived tokens; RFB itself is a thin password. Pair with a VNC server inside the agent VM, proxy on the host.
+  price: n/a
+  evidence:
+    - "https://github.com/novnc/noVNC (gh 2026-09-20: 14031 stars, pushed 2026-09-07, license Other/NOASSERTION)"
+    - "ran: gh api repos/novnc/noVNC/contents/LICENSE.txt → 'noVNC core library files are licensed under the MPL 2.0'"
+    - "https://github.com/novnc/noVNC/issues/522 (maintainers: short-lived tokens, do not put VNC passwords in long-lived URLs)"
+  tried: false
+  red_flags:
+    - "Unencrypted ws:// + SecurityTypes=None is a public desktop."
+    - "Token-in-URL leaks via Referer and logs."
+    - "Client is not a server: you still need a VNC daemon + websockify in the guest or on a jump host."
+  found_via: seed
+  status: unverified
+
+- id: d3-xvfb
+  name: Xvfb
+  url: https://gitlab.freedesktop.org/xorg/xserver
+  kind: repo
+  domain: D3
+  what_it_is: X virtual framebuffer in xorg-server. Gives headed GUI apps a DISPLAY with no monitor. This VM ships xvfb-run 2:21.1.12-1ubuntu1.5 and /usr/bin/Xvfb.
+  license: MIT
+  last_activity: unknown
+  maintainers: X.Org / Debian X Strike Force
+  runs_on: [linux]
+  answers: [Q6]
+  fit: partial
+  fit_why: Required inside a headless agent VM for cua-driver / real Chrome / desktop. Not a watch path (nothing to attach unless you also run x11vnc/KasmVNC). RAM cost is the apps, not Xvfb itself.
+  price: n/a
+  evidence:
+    - "dpkg -s xvfb → Version 2:21.1.12-1ubuntu1.5, Homepage https://www.x.org/"
+    - "https://developer.chrome.com/docs/automation-and-testing/headless-chrome-shell (new Headless Chrome does not need Xvfb; headed Chrome does)"
+    - "ran: timeout 25 xvfb-run -a -s '-screen 0 1024x768x24' /opt/google/chrome/chrome --disable-gpu --no-sandbox --user-data-dir=/tmp/claw-d3-xvfb3 --dump-dom https://example.com → exit 124; stdout was D-Bus errors, not HTML"
+    - "https://webdriver.io/docs/headless-and-xvfb/ (use native --headless when possible; Xvfb for Electron/GLX/window-manager)"
+  tried: true
+  red_flags:
+    - "A DISPLAY with no xauth/VNC auth is still a local GUI attack surface inside the VM."
+    - "Headed Chrome under Xvfb did not finish dump-dom in 25s on this host (likely stayed open)."
+  found_via: seed
+  status: unverified
+
+- id: d3-orgo
+  name: Orgo
+  url: https://www.orgo.ai/
+  kind: product
+  domain: D3
+  what_it_is: Hosted Linux desktops for agents (screenshot/mouse/keyboard/bash API + VNC). Docs claim <500ms boot, disk survives stop/start. Default 4 GB RAM / 1 CPU. Not self-hosted.
+  license: unknown
+  last_activity: unknown
+  maintainers: Orgo
+  runs_on: [cloud-only]
+  answers: [Q6, Q8]
+  fit: weak
+  fit_why: Closest commercial picture of 'full desktop + watch + takeover', and a useful UX reference (embed VNC, rotating desktop password). Breaks R4 (required hosted control plane + API key). Desktop password is documented as root-equivalent.
+  price: "unknown — https://www.orgo.ai/pricing fetched 2026-09-20 returned marketing HTML with no dollar amounts (JS app; no signup per RULES 15). Instance types 4–64 GB RAM at https://docs.orgo.ai/api-reference/introduction"
+  evidence:
+    - "https://docs.orgo.ai/introduction (full Linux desktop, HTTP + VNC, persistence)"
+    - "https://docs.orgo.ai/api-reference/introduction (os=linux; ram 4,8,16,32,64; default ram=4 cpu=1)"
+    - "https://docs.orgo.ai/guides/embed-vms (wss://www.orgo.ai/desktops/{id}/ws/websockify?token={password}; no origin allowlist; password is the only gate)"
+    - "https://docs.orgo.ai/llms-full.txt ('desktop password is root-equivalent'; also opens terminal websocket and bash proxy)"
+  tried: false
+  red_flags:
+    - "Not self-hostable (R4)."
+    - "Embed has no origin allowlist; leaked VNC password is a root shell."
+    - "sk_ API key bypasses MFA and covers the whole account."
+  found_via: seed
+  status: unverified
+
+- id: d3-hermes-computer-use
+  name: Hermes computer_use + browser toolsets
+  url: https://github.com/NousResearch/hermes-agent
+  kind: repo
+  domain: D3
+  what_it_is: Incumbent agent runtime. computer_use → cua-driver MCP (desktop AX/AT-SPI). browser toolset → Browser Use CLI 3.0 browser_exec or built-in browser_* plus CDP-gated browser_cdp when a CDP URL exists. /browser connect attaches to local Chrome.
+  license: MIT
+  last_activity: 2026-09-20
+  maintainers: NousResearch
+  runs_on: [linux, macos]
+  answers: [Q4, Q6]
+  fit: partial
+  fit_why: Already the both-paths design Claw would inherit. Docs now send signed-in browser work through browser_exec, not computer_use. Linux computer_use is headed. Cloud browser backends (Browserbase, Browser Use Cloud, Firecrawl) are optional hosted planes.
+  price: n/a
+  evidence:
+    - "https://github.com/NousResearch/hermes-agent (gh 2026-09-20: MIT, 247339 stars, pushed 2026-09-20)"
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/computer-use (AT-SPI/XTest; Xvfb on headless; bounded capability manifest; browser work via browser toolset)"
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/browser (/browser connect CDP; Camofox has no CDP so built-in tools stay)"
+    - "https://hermes-agent.nousresearch.com/docs/reference/tools-reference (computer_use via cua-driver; browser_cdp only if CDP reachable at session start)"
+    - "https://github.com/NousResearch/hermes-agent/pull/81958 (browser_exec driver over all CDP backends)"
+  tried: false
+  red_flags:
+    - "YOLO/unrestricted cua-driver daemon is an explicit risk-accept."
+    - "Attaching to Tomas's real Chrome via /browser connect puts R6 secrets on the same CDP socket the model can call."
+    - "browser_cdp is an escape hatch to arbitrary CDP methods."
+  found_via: seed
+  status: unverified
+
+- id: d3-kasmvnc
+  name: KasmVNC
+  url: https://github.com/kasmtech/KasmVNC
+  kind: repo
+  domain: D3
+  what_it_is: Browser-native remote desktop that breaks from classic RFB. Used by Kasm Workspaces to stream container desktops. YAML config, HTTPS, per-user kasmpasswd. Workspaces default session size is 2768MB RAM + 2 CPUs.
+  license: GPL-2.0
+  last_activity: 2026-09-15
+  maintainers: kasmtech
+  runs_on: [linux]
+  answers: [Q6]
+  fit: partial
+  fit_why: Better takeover UX than raw noVNC (clipboard, modern TLS). GPL-2.0 and Kasm Workspaces CE (5 concurrent sessions, not fully OSS, license server) collide with R4 if the whole platform is adopted. KasmVNC alone is self-hostable inside the guest.
+  price: "KasmVNC n/a (GPL). Kasm Workspaces CE free ≤5 concurrent sessions; commercial named-user or concurrent-session (https://kasm.com/docs/1.16.1/license.html, seen 2026-09-20)."
+  evidence:
+    - "https://github.com/kasmtech/KasmVNC (gh 2026-09-20: GPL-2.0, 5266 stars, pushed 2026-09-15)"
+    - "https://kasm.com/docs/latest/install/system_requirements.html (default workspace 2768MB + 2 cores)"
+    - "https://github.com/kasmtech/workspaces-core-images (docker run -p 6901:6901; https://host:6901 user kasm_user)"
+  tried: false
+  red_flags:
+    - "Workspaces platform is not a fully open control plane (R4)."
+    - "Default ~2.7 GiB RAM per desktop session blows a 48 GB Mac budget if every agent gets one."
+    - "GPL-2.0 copyleft on the VNC server."
+  found_via: 'search:"Kasm Workspaces open source browser isolation VNC RAM per session license"'
+  status: unverified
+
+- id: d3-guacamole
+  name: Apache Guacamole
+  url: https://github.com/apache/guacamole-server
+  kind: repo
+  domain: D3
+  what_it_is: Clientless HTML5 gateway. guacd translates RDP/VNC/SSH into the Guacamole protocol. Auth plugins include XML map, JDBC, LDAP, TOTP, OpenID. Enterprise-shaped Tomas watch/takeover front door.
+  license: Apache-2.0
+  last_activity: 2026-09-14
+  maintainers: Apache Guacamole PMC
+  runs_on: [linux]
+  answers: [Q6, Q7]
+  fit: strong
+  fit_why: Fortress-shaped human control plane. Keep guacd on the host (or a jump VM); it dials into each agent VM's VNC/xrdp. Agents never see the gateway credentials. Header-auth extension is dangerous if the header is not stripped at the edge.
+  price: n/a
+  evidence:
+    - "https://github.com/apache/guacamole-server (gh 2026-09-20: Apache-2.0, 3988 stars, pushed 2026-09-14)"
+    - "https://guacamole.apache.org/ (1.6.0 released 2025-06-22)"
+    - "https://guacamole.apache.org/doc/gug/configuring-guacamole.html (VNC password auth; RDP NLA)"
+    - "https://guacamole.apache.org/doc/1.6.0/gug/header-auth.html (REMOTE_USER must be stripped from untrusted requests)"
+  tried: false
+  red_flags:
+    - "HTTP-header auth is trivial to spoof without a sanitizing reverse proxy."
+    - "Java/Tomcat + guacd is more moving parts than noVNC+websockify."
+    - "Gateway compromise = every agent desktop."
+  found_via: 'search:"Apache Guacamole VNC RDP HTML5 gateway authentication 2026"'
+  status: unverified
+
+- id: d3-sunshine
+  name: Sunshine + Moonlight
+  url: https://github.com/LizardByte/Sunshine
+  kind: repo
+  domain: D3
+  what_it_is: "Wildcard from game streaming: Sunshine hosts a desktop; Moonlight clients stream via NVHTTP pairing + UDP video/audio. PIN+cert pairing, then encrypted sessions. Hardware encode preferred."
+  license: GPL-3.0
+  last_activity: 2026-09-19
+  maintainers: LizardByte
+  runs_on: [linux, macos]
+  answers: [Q6]
+  fit: weak
+  fit_why: Lowest-latency watch UX, but GPU-oriented, UDP port sprawl, GPL-3, and a historically sensitive admin UI. Pairing is a real second-factor (PIN), which VNC usually lacks. Poor fit for many headless Linux agent VMs without a GPU.
+  price: n/a
+  evidence:
+    - "https://github.com/LizardByte/Sunshine (gh 2026-09-20: GPL-3.0, 41386 stars, pushed 2026-09-20)"
+    - "https://github.com/moonlight-stream/moonlight-qt (GPL-3.0, 18705 stars, pushed 2026-09-18)"
+    - "https://github.com/moonlight-stream/moonlight-docs/wiki/Setup-Guide (create admin account on first run; anyone with the UI can pair clients; Tailscale recommended vs exposing ports)"
+    - "https://docs.lizardbyte.dev/projects/sunshine/v2026.319.132152/md_docs_2troubleshooting.html (stability/jitter over bandwidth)"
+  tried: false
+  red_flags:
+    - "Admin UI on :47990 can add clients that then own the desktop."
+    - "UPnP option forwards streaming ports to the internet."
+    - "Min RAM listed as 4GB host; hardware encoder assumed for usable latency."
+  found_via: 'search:"Moonlight Sunshine game streaming latency authentication security self-hosted"'
+  status: unverified
+
+- id: d3-at-spi
+  name: AT-SPI2
+  url: https://github.com/GNOME/at-spi2-core
+  kind: repo
+  domain: D3
+  what_it_is: "Wildcard from accessibility: Linux UI automation bus (D-Bus). Screen readers and cua-driver on Linux read the widget tree and invoke actions. GitHub mirror of gitlab.gnome.org/GNOME/at-spi2-core."
+  license: LGPL-2.1
+  last_activity: 2026-09-16
+  maintainers: GNOME
+  runs_on: [linux]
+  answers: [Q6, Q7]
+  fit: partial
+  fit_why: Better than screenshot-only control (roles, names, text, actions) and works with DeepSeek-class models (R8) because it is structured, not vision. Same bus can read password fields and drive every app in the session — a stealthy R6 bypass if the agent VM is not the isolation boundary.
+  price: n/a
+  evidence:
+    - "https://github.com/GNOME/at-spi2-core (gh 2026-09-20: LGPL-2.1, pushed 2026-09-16; mirror of GitLab)"
+    - "https://docs.gtk.org/atspi2/index.html (generate_keyboard_event, register_keystroke_listener)"
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/computer-use (Linux accessibility tree = AT-SPI)"
+    - "https://autokaam.com/tutorials/at-spi2-ai-agent-native-linux-gui-automation/ (agent using Action/Text/EditableText instead of pixels)"
+  tried: false
+  red_flags:
+    - "Session-bus access ≈ OS-level UI implant; endpoint tools rarely audit it."
+    - "Hard to sandbox per-app without a filtered D-Bus proxy."
+    - "Prompt injection + AT-SPI = click Send/Pay in whatever is on screen."
+  found_via: 'search:"AT-SPI Linux accessibility API agent UI automation pyatspi security"'
+  status: unverified
+
+- id: d3-waydroid
+  name: Waydroid
+  url: https://github.com/waydroid/waydroid
+  kind: repo
+  domain: D3
+  what_it_is: "Wildcard from mobile: container that boots a full Android system on GNU/Linux. Adjacent to 'agent computer' when the site only works in a mobile WebView/Play-integrity world."
+  license: GPL-3.0
+  last_activity: 2026-09-06
+  maintainers: waydroid
+  runs_on: [linux]
+  answers: [Q6]
+  fit: weak
+  fit_why: Not the v1 computer. Nested Android inside an already-nested Linux VM is a research path for outbound that must look like a phone. Binder/kernel modules and GPL-3 complicate R1/R4. Persistence is a container image, not a Chrome profile.
+  price: n/a
+  evidence:
+    - "https://github.com/waydroid/waydroid (gh 2026-09-20: GPL-3.0, 12229 stars, pushed 2026-09-06)"
+    - "https://waydro.id (container-based full Android on regular GNU/Linux)"
+  tried: false
+  red_flags:
+    - "Needs binder/ashmem-style kernel support; may not exist in a Firecracker-class guest."
+    - "Play Integrity / SafetyNet will still see an emulator."
+    - "Huge extra attack surface (Android + Linux host)."
+  found_via: 'search:"Waydroid Android container Linux"'
+  status: unverified
+
+- id: d3-xpra
+  name: Xpra
+  url: https://github.com/Xpra-org/xpra
+  kind: repo
+  domain: D3
+  what_it_is: Persistent remote X11 ('screen for GUI apps'). Disconnect/reconnect without killing apps. HTML5 client, SSH/SSL/QUIC transports, steal/share session flags. Can run rootless (windows on Tomas's desktop) or desktop/shadow (VNC-like).
+  license: GPL-2.0
+  last_activity: 2026-09-17
+  maintainers: Xpra-org
+  runs_on: [linux, macos]
+  answers: [Q6]
+  fit: partial
+  fit_why: Persistence of the GUI session is the actual R3 desktop story (Chrome profile is necessary but not sufficient if the window dies). Docs prefer SSH as transport. steal=yes means takeover disconnects the other viewer — good for 'Tomas grabs control', bad if an agent reconnects and kicks him.
+  price: n/a
+  evidence:
+    - "https://github.com/Xpra-org/xpra (gh 2026-09-20: GPL-2.0, 2979 stars, pushed 2026-09-18)"
+    - "https://github.com/Xpra-org/xpra/blob/master/docs/Usage/Security.md (ssl/quic/ssh safest; HTML5 ships restrictive CSP)"
+    - "https://github.com/Xpra-org/xpra-html5/blob/master/docs/Configuration.md (sharing default No, steal default Yes; HTML5 refuses passwords over unencrypted remote)"
+    - "https://github.com/Xpra-org/xpra/blob/master/docs/Usage/Authentication.md (TCP password auth is MITM-able without encryption; use SSH)"
+  tried: false
+  red_flags:
+    - "Rootless mode would project agent windows onto Tomas's Mac desktop (R2 bleed)."
+    - "GPL-2.0."
+    - "xor password hashing refused unless encrypted — easy to misconfigure TCP."
+  found_via: 'search:"xpra persistent X11 session HTML5 client authentication vs VNC security"'
+  status: unverified
+
+- id: d3-camoufox
+  name: Camoufox
+  url: https://github.com/daijro/camoufox
+  kind: repo
+  domain: D3
+  what_it_is: Anti-detect Firefox fork for scraping/agents. Fingerprint spoofing. Hermes documents a Camofox/Camoufox backend with no CDP, so built-in browser tools stay. Heavier than Chromium.
+  license: MPL-2.0
+  last_activity: 2026-09-14
+  maintainers: daijro
+  runs_on: [linux, macos]
+  answers: [Q6]
+  fit: weak
+  fit_why: Anti-bot reality check, not a takeover path. README says under development / maybe not production. Fingerprint spoofing is an arms race and a ToS/legal problem for client deployments. No CDP means Hermes cannot use browser_cdp.
+  price: n/a
+  evidence:
+    - "https://github.com/daijro/camoufox (gh 2026-09-20: MPL-2.0, 12024 stars, pushed 2026-09-14; README 'under development')"
+    - "https://hermes-agent.nousresearch.com/docs/user-guide/features/browser (Camofox has no CDP endpoint; built-in tools kept)"
+    - "https://www.linkedin.com/posts/denys-seheda-b23729267_i-created-a-benchmark-to-compare-webdrivers-activity-7434189539042062337-C5HR (Camoufox 2–3× resource use vs Chrome in one unpublished-memory benchmark)"
+  tried: false
+  red_flags:
+    - "Stealth forks are cat-and-mouse; Cloudflare still uses IP/behaviour."
+    - "Firefox market share itself can be a detection signal."
+    - "No CDP watch/debug story."
+  found_via: 'search:"Camoufox anti-detect browser Playwright" (also named in Hermes browser docs)'
+  status: unverified
+
+- id: d3-selkies
+  name: Selkies
+  url: https://github.com/selkies-project/selkies
+  kind: repo
+  domain: D3
+  what_it_is: Low-latency HTML5 remote desktop (WebSockets+WebCodecs default; WebRTC opt-in). Started at Google, now community/LinuxServer. Single port 8080. Optional basic-auth env vars. Designed for unprivileged containers.
+  license: MPL-2.0
+  last_activity: 2026-09-20
+  maintainers: selkies-project
+  runs_on: [linux]
+  answers: [Q6]
+  fit: partial
+  fit_why: Modern watch/takeover that is not VNC and is container-friendly (agent VM or sidecar). Default basic auth must be set; WebRTC mode needs TURN. GPU optional. More moving parts than noVNC, better latency if it works.
+  price: n/a
+  evidence:
+    - "https://github.com/selkies-project/selkies (gh 2026-09-20: MPL-2.0, 2178 stars, pushed 2026-09-20)"
+    - "https://selkies-project.github.io/selkies/ (WebSockets default, WebRTC opt-in, MPL-2.0)"
+    - "https://selkies-project.github.io/selkies/component/ (XTEST input; SELKIES_BASIC_AUTH_USER/PASSWORD; TURN only for webrtc)"
+    - "https://selkies-project.github.io/selkies/start/ (self-signed cert; SELKIES_WAYLAND=true headless Wayland backend)"
+  tried: false
+  red_flags:
+    - "Empty basic-auth password default is a misconfig footgun."
+    - "WebRTC TURN servers are extra attack surface if enabled."
+    - "Input via XTEST — same local-GUI trust as any VNC."
+  found_via: 'search:"selkies-project selkies WebRTC remote desktop GPU Kubernetes MPL"'
+  status: unverified
+
+- id: d3-xrdp
+  name: xrdp
+  url: https://github.com/neutrinolabs/xrdp
+  kind: repo
+  domain: D3
+  what_it_is: Open-source RDP server for Linux. Lets Tomas use a real Remote Desktop client (or Guacamole's RDP plugin) against the agent VM. Encrypted by default unlike classic VNC.
+  license: Apache-2.0
+  last_activity: 2026-09-16
+  maintainers: neutrinolabs
+  runs_on: [linux]
+  answers: [Q6]
+  fit: partial
+  fit_why: Stronger wire protocol than VNC (NLA). Fits 'Tomas takes over' from a Mac RDP client without building HTML5. Must not be published past the host; pair with Guacamole or SSH -L. Heavier than a browser-only path.
+  price: n/a
+  evidence:
+    - "https://github.com/neutrinolabs/xrdp (gh 2026-09-20: Apache-2.0, 6728 stars, pushed 2026-09-16)"
+    - "https://guacamole.apache.org/doc/gug/configuring-guacamole.html (RDP connections are encrypted; NLA)"
+  tried: false
+  red_flags:
+    - "RDP on 0.0.0.0:3389 is a magnet for scanners."
+    - "Session 0 vs logged-in desktop confusion (also noted in cua-driver Windows SSH docs)."
+  found_via: 'search:"xrdp open source RDP server Linux"'
+  status: unverified
+
+- id: d3-chrome-remote-debugging
+  name: Chrome 136+ remote-debugging restrictions
+  url: https://developer.chrome.com/blog/remote-debugging-port
+  kind: pattern
+  domain: D3
+  what_it_is: Platform change, not a product. From Chrome 136, --remote-debugging-port/--remote-debugging-pipe are ignored on the default user-data-dir so infostealers cannot attach to the real profile. Chrome for Testing keeps old behaviour.
+  license: n/a
+  last_activity: 2025-03-17
+  maintainers: Google Chrome Security
+  runs_on: [linux, macos]
+  answers: [Q6, Q7]
+  fit: strong
+  fit_why: Load-bearing constraint for R3+R6. Persistent agent logins must live in a dedicated --user-data-dir inside the VM, never Tomas's default Chrome. Observed on this host with Chrome 148.
+  price: n/a
+  evidence:
+    - "https://developer.chrome.com/blog/remote-debugging-port (published 2025-03-17, retrieved 2026-09-20)"
+    - "ran: google-chrome --headless --disable-gpu --dump-dom https://example.com → stderr 'DevTools remote debugging requires a non-default data directory. Specify this using --user-data-dir.'"
+    - "This cloud VM's /usr/local/bin/google-chrome wrapper always adds --remote-debugging-port=9222 --user-data-dir=/home/ubuntu/.config/google-chrome — illustrating how 'helpful' wrappers re-open the hole Chrome just closed."
+  tried: true
+  red_flags:
+    - "Wrappers that force a debugging port on a real profile recreate the infostealer path."
+    - "--no-sandbox (common in containers) plus CDP is a browser-escape amplifier."
+  found_via: 'search:"Chrome DevTools Protocol remote debugging security risk bind 0.0.0.0"'
+  status: unverified
+
+- id: d3-playwright-mcp
+  name: Playwright MCP
+  url: https://github.com/microsoft/playwright-mcp
+  kind: repo
+  domain: D3
+  what_it_is: MCP server that drives Playwright via accessibility snapshots instead of screenshots. Persistent MCP browser context; no vision model required (R8-friendly).
+  license: Apache-2.0
+  last_activity: 2026-09-18
+  maintainers: Microsoft
+  runs_on: [linux, macos]
+  answers: [Q6, Q4]
+  fit: partial
+  fit_why: Structured snapshots beat pixel computer-use for DeepSeek-class models and avoid shipping a live VNC of every click. Does not cover native desktop apps. Watch UX is the MCP client (Cursor/Hermes), not a shared screen; Tomas cannot grab the mouse unless a headed Playwright window is also displayed.
+  price: n/a
+  evidence:
+    - "https://github.com/microsoft/playwright-mcp (gh 2026-09-20: Apache-2.0, 37380 stars, pushed 2026-09-18)"
+    - "README: 'structured accessibility snapshots, bypassing the need for screenshots or visually-tuned models'; Node 18+"
+  tried: false
+  red_flags:
+    - "Accessibility snapshots can include field values (PII/secrets) in the model context."
+    - "npx @playwright/mcp@latest as a default is an unpinned supply chain."
+  found_via: 'search:"Playwright MCP accessibility snapshot"'
+  status: unverified
+
+- id: d3-websockify
+  name: websockify
+  url: https://github.com/novnc/websockify
+  kind: repo
+  domain: D3
+  what_it_is: WebSocket-to-TCP bridge that noVNC and Orgo-style embeds use to reach VNC. Optional TLS, auth plugins, token plugins, --ssl-only, client certs.
+  license: LGPL-3.0
+  last_activity: 2026-05-24
+  maintainers: novnc
+  runs_on: [linux]
+  answers: [Q6, Q7]
+  fit: partial
+  fit_why: The actual network door in front of VNC. Security lives here (or in Guacamole), not in noVNC JS. Token plugins are how OpenStack-style consoles mint 60-second URLs. LGPL-3.
+  price: n/a
+  evidence:
+    - "https://github.com/novnc/websockify (gh 2026-09-20: LGPL-3.0, 4457 stars, pushed 2026-05-24)"
+    - "https://github.com/novnc/websockify/blob/master/README.md ( --ssl-only, --auth-plugin, --web-auth, --token-plugin )"
+    - "https://manpages.debian.org/unstable/websockify/websockify.1.en.html (example wraps vncserver with --SecurityTypes=None behind client-cert auth — VNC itself then has no password)"
+  tried: false
+  red_flags:
+    - "If VNC is SecurityTypes=None, a bypassed websockify is a free desktop."
+    - "Self-signed WSS is easy to get wrong (browsers fail closed on WSS cert errors)."
+    - "Last push 2026-05-24 is older than sibling noVNC; still <6 months."
+  found_via: 'link from https://github.com/novnc/noVNC'
+  status: unverified
+
+- id: d3-rustdesk
+  name: RustDesk
+  url: https://github.com/rustdesk/rustdesk
+  kind: repo
+  domain: D3
+  what_it_is: Self-hosted TeamViewer alternative (AGPL). Optional self-hosted rendezvous/relay. End-user takeover UX Tomas already understands. Not agent-API oriented.
+  license: AGPL-3.0
+  last_activity: 2026-09-20
+  maintainers: rustdesk
+  runs_on: [linux, macos]
+  answers: [Q6]
+  fit: weak
+  fit_why: Human takeover only. AGPL-3 and a rendezvous service (even self-hosted) are a hard sell vs Guacamole. Useful as a UX benchmark, not a v1 component. ID/password remote-access model is a phishing classic.
+  price: n/a
+  evidence:
+    - "https://github.com/rustdesk/rustdesk (gh 2026-09-20: AGPL-3.0, 124058 stars, pushed 2026-09-20; homepage https://rustdesk.com)"
+  tried: false
+  red_flags:
+    - "AGPL-3.0 on anything linked into Claw."
+    - "Unattended access IDs leak; always-on agents become a botnet if the key is stolen."
+  found_via: 'search:"RustDesk self-hosted remote desktop AGPL"'
+  status: unverified
