@@ -1,4 +1,8 @@
-"""Linux-cloud readiness. Observe/guards checks never require TypeSafe."""
+"""Linux-cloud readiness. Observe/guards checks never require TypeSafe.
+
+R2: if product/vm/claw-vm exists, doctor shells out to `./product/vm/claw-vm doctor`.
+Never pass --probe-vcpu (nested KVM_CREATE_VCPU kernel-BUGs on this host).
+"""
 
 from __future__ import annotations
 
@@ -6,6 +10,7 @@ import json
 import os
 import platform
 import shutil
+import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -15,14 +20,67 @@ from .browser import load_browser_adapter
 from .computer import HostComputer
 from .config import Config, presence_label
 from .guards import check_text
+from .paths import product_dir
 
 STUBBED = (
-    "r2-vm-computer",
-    "jev-adapter",
+    "r2-hardware-kvm",
     "prime-bash-permission-extension",
     "hermes-kanban",
     "desktop-watch-takeover",
 )
+
+
+@dataclass
+class Check:
+    id: str
+    ok: bool
+    detail: str
+    warning: bool = False
+
+
+def claw_vm_bin(root: Path) -> Path | None:
+    path = product_dir(root) / "vm" / "claw-vm"
+    if path.is_file():
+        return path
+    return None
+
+
+def run_claw_vm_doctor(root: Path) -> dict | None:
+    """Thin hook: call product/vm/claw-vm doctor --json. Never --probe-vcpu."""
+    binary = claw_vm_bin(root)
+    if binary is None:
+        return None
+    argv = [str(binary), "doctor", "--json"]
+    if any(part == "--probe-vcpu" for part in argv):
+        raise RuntimeError("refusing to pass --probe-vcpu to claw-vm")
+    try:
+        proc = subprocess.run(
+            argv,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=45,
+            cwd=str(root),
+            env=os.environ.copy(),
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return {"ok": False, "error": type(exc).__name__, "present": True}
+    if proc.returncode != 0:
+        return {
+            "ok": False,
+            "present": True,
+            "error": f"claw-vm doctor exit {proc.returncode}",
+            "stderr": (proc.stderr or "").strip()[:400],
+        }
+    try:
+        payload = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return {"ok": False, "present": True, "error": "claw-vm doctor produced non-JSON"}
+    if not isinstance(payload, dict):
+        return {"ok": False, "present": True, "error": "claw-vm doctor JSON was not an object"}
+    payload["ok"] = True
+    payload["present"] = True
+    return payload
 
 
 @dataclass
@@ -48,7 +106,7 @@ def _chrome_bin() -> str | None:
     return shutil.which("google-chrome") or shutil.which("chromium")
 
 
-def collect(cfg: Config) -> list[Check]:
+def collect(cfg: Config, vm: dict | None = None) -> list[Check]:
     checks: list[Check] = []
     system = platform.system()
     checks.append(
@@ -68,18 +126,38 @@ def collect(cfg: Config) -> list[Check]:
     )
     computer = HostComputer()
     kvm = computer.kvm_present()
-    checks.append(
-        Check(
-            "kvm",
-            True,
-            (
-                "/dev/kvm present (unused: R2 computer is stubbed; Prime runs on the host)"
-                if kvm
-                else "/dev/kvm missing (R2 VM computer is stubbed either way)"
-            ),
-            warning=not kvm,
+    if vm is None:
+        vm = run_claw_vm_doctor(cfg.repo_root)
+    if vm and vm.get("ok"):
+        kvm_info = vm.get("kvm") if isinstance(vm.get("kvm"), dict) else {}
+        default = vm.get("default_computer") if isinstance(vm.get("default_computer"), dict) else {}
+        iso = vm.get("isolation") if isinstance(vm.get("isolation"), dict) else {}
+        kvm_detail = (
+            f"/dev/kvm present={kvm_info.get('present', kvm)} "
+            f"openable={kvm_info.get('openable')} nested={kvm_info.get('nested')} "
+            f"(claw-vm; never --probe-vcpu on this host)"
         )
-    )
+        r2_detail = (
+            f"claw-vm {default.get('name') or iso.get('vmm') or 'present'} "
+            f"accel={default.get('accel') or iso.get('accel')} "
+            f"r2_vm_boundary={iso.get('r2_vm_boundary')} "
+            f"r2_hardware_kvm={iso.get('r2_hardware_kvm')}"
+        )
+        r2_warning = not bool(iso.get("r2_hardware_kvm"))
+    elif vm and vm.get("present"):
+        kvm_detail = f"/dev/kvm present={kvm}; claw-vm doctor failed: {vm.get('error')}"
+        r2_detail = f"product/vm/claw-vm present but doctor failed: {vm.get('error')}"
+        r2_warning = True
+    else:
+        kvm_detail = (
+            "/dev/kvm present (product/vm/claw-vm not on this checkout)"
+            if kvm
+            else "/dev/kvm missing (product/vm/claw-vm not on this checkout)"
+        )
+        r2_detail = "product/vm/claw-vm not present"
+        r2_warning = True
+    checks.append(Check("kvm", True, kvm_detail, warning=not kvm))
+    checks.append(Check("r2-vm", True, r2_detail, warning=r2_warning))
     brain = PrimeBrain(cfg)
     version = brain.version()
     checks.append(
@@ -155,18 +233,27 @@ def collect(cfg: Config) -> list[Check]:
 
 
 def report(cfg: Config) -> dict:
-    checks = collect(cfg)
+    vm = run_claw_vm_doctor(cfg.repo_root)
+    checks = collect(cfg, vm=vm)
     hard_fail = [c for c in checks if not c.ok and not c.warning]
     ready = all(c.ok for c in checks if c.id in {"linux", "python"})
     adapter = load_browser_adapter(cfg)
+    iso = vm.get("isolation") if isinstance(vm, dict) and isinstance(vm.get("isolation"), dict) else {}
+    default = (
+        vm.get("default_computer") if isinstance(vm, dict) and isinstance(vm.get("default_computer"), dict) else {}
+    )
+    r2_isolated = bool(iso.get("r2_vm_boundary") or default.get("r2_isolated"))
     stubbed = [
-        "r2-vm-computer",
         "prime-bash-permission-extension",
         "hermes-kanban",
         "desktop-watch-takeover",
     ]
     if adapter.name == "missing-jev":
-        stubbed.insert(1, "jev-adapter")
+        stubbed.insert(0, "jev-adapter")
+    if not (isinstance(vm, dict) and vm.get("ok")):
+        stubbed.insert(0, "r2-vm-computer")
+    elif not iso.get("r2_hardware_kvm"):
+        stubbed.insert(0, "r2-hardware-kvm")
     payload = {
         "ok": ready and not hard_fail,
         "ready": ready,
@@ -176,7 +263,8 @@ def report(cfg: Config) -> dict:
         "workspace": str(cfg.workspace),
         "browser_profile": str(cfg.browser_profile),
         "adapter": adapter.name,
-        "r2_isolated": False,
+        "r2_isolated": r2_isolated,
+        "vm": _public_vm(vm),
         "checks": [asdict(c) for c in checks],
         "stubbed": stubbed,
         "env_files": [str(p) for p in cfg.env_files],
@@ -196,10 +284,12 @@ def report(cfg: Config) -> dict:
 
 
 def render_text(payload: dict) -> str:
+    vm = payload.get("vm") if isinstance(payload.get("vm"), dict) else {}
+    computer_name = vm.get("computer") or "host process"
     lines = [
         f"Norfront Claw Linux  {'READY' if payload.get('ok') else 'NOT READY'}",
         f"  brain     Prime Agent ({payload.get('provider')}/{payload.get('model')})",
-        f"  computer  host process — R2 isolated={payload.get('r2_isolated')}",
+        f"  computer  {computer_name} — R2 isolated={payload.get('r2_isolated')}",
         f"  browser   {payload.get('adapter')} (Jev hook)",
         "",
     ]
@@ -217,3 +307,20 @@ def render_text(payload: dict) -> str:
 
 def dumps(payload: dict) -> str:
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+
+
+def _public_vm(vm: dict | None) -> dict:
+    if not vm:
+        return {"present": False}
+    iso = vm.get("isolation") if isinstance(vm.get("isolation"), dict) else {}
+    default = vm.get("default_computer") if isinstance(vm.get("default_computer"), dict) else {}
+    return {
+        "present": bool(vm.get("present")),
+        "ok": bool(vm.get("ok")),
+        "computer": default.get("name") or iso.get("vmm"),
+        "accel": default.get("accel") or iso.get("accel"),
+        "r2_vm_boundary": iso.get("r2_vm_boundary"),
+        "r2_hardware_kvm": iso.get("r2_hardware_kvm"),
+        "home": vm.get("home"),
+        "error": vm.get("error"),
+    }

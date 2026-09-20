@@ -1,8 +1,8 @@
 # Norfront Claw — Linux cloud product
 
-Prime Agent is the **brain**. Jev Ultrafast is the **browser plugin** in `product/jev/` (stacked from [PR #1](https://github.com/tomasbm21/harnesstart/pull/1)). This tree is the Linux-cloud runtime: not Hermes, not Tomas’s Mac, not Remote Control.
+Prime Agent is the **brain**. Jev Ultrafast is the **browser** in `product/jev/` (stacked from [PR #1](https://github.com/tomasbm21/harnesstart/pull/1)). The **R2 VM computer** is `product/vm/` (stacked from [PR #3](https://github.com/tomasbm21/harnesstart/pull/3)). This tree is the Linux-cloud runtime: not Hermes, not Tomas’s Mac, not Remote Control.
 
-This PR contains both `product/claw` and `product/jev/`.
+This PR contains `product/claw`, `product/jev/`, and `product/vm/`.
 
 Config is environment-only (`claw.env` plus process env). Keys are never printed.
 
@@ -10,7 +10,7 @@ Config is environment-only (`claw.env` plus process env). Keys are never printed
 
 ```bash
 # from the harnesstart repo root
-./product/claw doctor          # Linux / Python / KVM / Prime / keys-as-booleans / Jev hook
+./product/claw doctor          # also runs ./product/vm/claw-vm doctor (never --probe-vcpu)
 ./product/claw test            # offline unit tests; no vendor keys
 ./product/claw guards          # local R6 broker + Jev check_guards(); no TypeSafe key
 ./product/claw observe URL     # claw_jev.observe(); no TypeSafe key
@@ -52,8 +52,9 @@ cd product/jev && uv sync --extra dev
 | Path | Role |
 | --- | --- |
 | `product/claw` | Entrypoint |
-| `product/norfront_claw/` | Config, doctor, Prime wrapper, R6 guards, **claw_jev hook** |
+| `product/norfront_claw/` | Config, doctor, Prime wrapper, R6 guards, claw_jev + claw-vm hooks |
 | `product/jev/` | `claw_jev` package (dedicated Chrome + Jev Ultrafast) |
+| `product/vm/` | `claw_vm` package (Firecracker preferred; QEMU TCG on this nested host) |
 | `product/prime-prompt.md` | Appended to Prime Agent; `--no-context-files` so repo `AGENTS.md` is not loaded |
 | `~/.local/share/norfront-claw/workspace` | Prime Agent cwd (not the harness git tree) |
 
@@ -80,9 +81,17 @@ from claw_jev import (
 
 Override discovery with `CLAW_BROWSER_ADAPTER=module:factory` (tests). If `product/jev/claw_jev` is absent, commands that only need observe/guards still run; live policy fails with “adapter missing”.
 
+## R2 VM hook
+
+`./product/claw doctor` shells out to `./product/vm/claw-vm doctor --json` when that script exists. It never passes `--probe-vcpu` (nested `KVM_CREATE_VCPU` kernel-BUGs on this host). Direct check:
+
+```bash
+./product/vm/claw-vm doctor
+```
+
 ## Still stubbed
 
-- **R2 VM computer** — Prime Agent runs as the host user. `/dev/kvm` is detected and unused. Wrap later (Firecracker/libkrun).
+- **R2 hardware KVM** — this nested cloud host kernel-BUGs on `KVM_CREATE_VCPU`. Do not pass `--probe-vcpu`. Default computer is QEMU TCG (still a VM boundary). Firecracker on hosts where nested KVM works.
 - **Live model turn** — needs `DEEPSEEK_API_KEY` in env; doctor does not.
 - **Live Jev policy** — needs `TYPESAFE_API_KEY` in env; fails R4 unless Tomas waives it.
 - **Prime bash permission extension** — R6 is a prompt-level classifier on `claw run` / `claw browse` / `claw choose`, not an in-kernel Prime extension.
