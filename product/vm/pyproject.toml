@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "claw-vm"
+version = "0.1.0"
+description = "Norfront Claw Linux-cloud VM computer: Firecracker (KVM) preferred, QEMU fallback. BRIEF R2."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = []
+
+[project.scripts]
+claw-vm = "claw_vm.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.4,<9"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["claw_vm"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "live: boots a real guest on this machine (slow; set CLAW_VM_LIVE=1)",
+]
