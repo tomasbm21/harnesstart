@@ -38,9 +38,12 @@ from .firecracker import (
     teardown_tap,
     write_config,
 )
+from .backends import StartSkipped, live_start_for, start_backend
 from .isolation import isolation_report
 from .kvm import vcpu_known_good
+from .names import BUILTIN_VMMS
 from .paths import check_name, instance_dir, instances_dir
+from .registry import resolve_backend
 from .qemu import (
     argv as qemu_argv,
     monitor_quit,
@@ -117,17 +120,6 @@ def _write_meta(name: str, meta: dict[str, Any]) -> None:
     path.write_text(json.dumps(meta, indent=2) + "\n")
 
 
-def _choose_vmm(requested: str | None) -> str:
-    vmm = (requested or os.environ.get("CLAW_VM_VMM") or "auto").lower()
-    if vmm in {"firecracker", "fc"}:
-        return "firecracker"
-    if vmm in {"qemu", "qemu-tcg", "qemu-kvm"}:
-        return "qemu"
-    if vmm == "auto":
-        return "firecracker" if vcpu_known_good() else "qemu"
-    raise ValueError(f"unknown vmm {requested!r}")
-
-
 def _image(image_id: str | None, vmm: str) -> Image:
     iid = (image_id or os.environ.get("CLAW_VM_IMAGE") or default_image_id(vmm)).lower()
     if iid not in IMAGES:
@@ -149,11 +141,21 @@ def start(
     *,
     image: str | None = None,
     vmm: str | None = None,
+    backend: str | None = None,
     wait: bool = True,
     timeout: int = 180,
 ) -> ClawVM:
     name = check_name(name)
-    chosen = _choose_vmm(vmm)
+    requested = backend or vmm
+    bid = resolve_backend(requested)
+    if bid not in BUILTIN_VMMS:
+        payload = start_backend(bid, name)
+        return _optional_started(name, bid, payload)
+    if bid == "firecracker":
+        live = live_start_for("firecracker")
+        if not live.ready:
+            raise StartSkipped("firecracker", live.reason, live.detail)
+    chosen = bid
     img = _image(image, chosen)
     idir = instance_dir(name)
     idir.mkdir(parents=True, exist_ok=True)
@@ -304,6 +306,32 @@ def _start_firecracker(name: str, img: Image) -> dict[str, Any]:
         "r2_hardware_kvm": bool(iso["r2_hardware_kvm"]),
         "started_at": time.time(),
     }
+
+
+def _optional_started(name: str, bid: str, payload: dict[str, Any]) -> ClawVM:
+    """Record a successful optional-backend start. Skip paths never reach here."""
+    idir = instance_dir(name)
+    idir.mkdir(parents=True, exist_ok=True)
+    iso = isolation_report(vmm=bid, accel="kvm")
+    disk = idir / "disk"
+    meta = {
+        "name": name,
+        "vmm": bid,
+        "accel": "kvm",
+        "image": bid,
+        "ssh_user": "root",
+        "ssh_host": "127.0.0.1",
+        "ssh_port": None,
+        "disk": str(disk),
+        "pid": None,
+        "r2_isolated": True,
+        "r2_hardware_kvm": bool(iso["r2_hardware_kvm"]),
+        "optional": True,
+        "backend_start": payload,
+        "started_at": time.time(),
+    }
+    _write_meta(name, meta)
+    return _from_meta(meta)
 
 
 def _from_meta(meta: dict[str, Any]) -> ClawVM:

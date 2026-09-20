@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "claw-vm"
-version = "0.1.0"
-description = "Norfront Claw Linux-cloud VM computer: Firecracker (KVM) preferred, QEMU fallback. BRIEF R2."
+version = "0.2.0"
+description = "Norfront Claw Linux-cloud VM computer: QEMU default; optional Celesto, E2B, AgentENV, microsandbox, libkrun. BRIEF R2."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"

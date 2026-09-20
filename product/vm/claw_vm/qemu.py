@@ -12,9 +12,9 @@ from . import priv
 from .kvm import kvm_openable, vcpu_known_good
 
 
-def qemu_bin() -> str:
+def qemu_bin(*, require: bool = True) -> str:
     exe = "qemu-system-x86_64"
-    if not priv.have(exe):
+    if require and not priv.have(exe):
         raise RuntimeError("qemu-system-x86_64 missing; run claw-vm fetch / install qemu-system-x86")
     return exe
 
@@ -48,7 +48,7 @@ def argv(
     if restrict:
         netdev = f"user,id=net0,restrict=on,hostfwd=tcp:127.0.0.1:{ssh_port}-:22"
     cmd = [
-        qemu_bin(),
+        qemu_bin(require=False),
         *accel_argv,
         "-machine",
         "q35",

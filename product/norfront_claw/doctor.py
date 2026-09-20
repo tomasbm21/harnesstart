@@ -137,8 +137,12 @@ def collect(cfg: Config, vm: dict | None = None) -> list[Check]:
             f"openable={kvm_info.get('openable')} nested={kvm_info.get('nested')} "
             f"(claw-vm; never --probe-vcpu on this host)"
         )
+        selected = vm.get("selected") or default.get("name") or iso.get("vmm") or "present"
+        n_backends = len(vm.get("backends") or []) if isinstance(vm.get("backends"), list) else 0
         r2_detail = (
-            f"claw-vm {default.get('name') or iso.get('vmm') or 'present'} "
+            f"claw-vm selected={selected} "
+            f"source={vm.get('selected_source') or 'default'} "
+            f"backends={n_backends} "
             f"accel={default.get('accel') or iso.get('accel')} "
             f"r2_vm_boundary={iso.get('r2_vm_boundary')} "
             f"r2_hardware_kvm={iso.get('r2_hardware_kvm')}"
@@ -314,13 +318,27 @@ def _public_vm(vm: dict | None) -> dict:
         return {"present": False}
     iso = vm.get("isolation") if isinstance(vm.get("isolation"), dict) else {}
     default = vm.get("default_computer") if isinstance(vm.get("default_computer"), dict) else {}
+    backends = vm.get("backends") if isinstance(vm.get("backends"), list) else []
+    selected = vm.get("selected") or default.get("name") or iso.get("vmm")
     return {
         "present": bool(vm.get("present")),
         "ok": bool(vm.get("ok")),
-        "computer": default.get("name") or iso.get("vmm"),
+        "computer": selected,
+        "selected": selected,
+        "selected_source": vm.get("selected_source"),
         "accel": default.get("accel") or iso.get("accel"),
         "r2_vm_boundary": iso.get("r2_vm_boundary"),
         "r2_hardware_kvm": iso.get("r2_hardware_kvm"),
         "home": vm.get("home"),
         "error": vm.get("error"),
+        "backends": [
+            {
+                "id": item.get("name"),
+                "live_start": item.get("live_start"),
+                "present": item.get("present"),
+                "selected": item.get("selected"),
+            }
+            for item in backends
+            if isinstance(item, dict)
+        ],
     }

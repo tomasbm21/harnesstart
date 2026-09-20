@@ -38,6 +38,11 @@ def instance_dir(name: str) -> Path:
     return instances_dir() / name
 
 
+def selected_path() -> Path:
+    """File written by `claw-vm select`. CLAW_VM_BACKEND env still wins."""
+    return vm_home() / "selected"
+
+
 def check_name(name: str) -> str:
     if not NAME_RE.match(name):
         raise ValueError(

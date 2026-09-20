@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -46,6 +47,8 @@ class QemuArgvTest(unittest.TestCase):
         self.assertIn("unix:/tmp/monitor.sock,server=on,wait=off", " ".join(cmd))
 
     def test_overlay_creates_qcow2(self) -> None:
+        if not shutil.which("qemu-img"):
+            self.skipTest("qemu-img not installed")
         with tempfile.TemporaryDirectory() as td:
             base = Path(td) / "base.qcow2"
             dest = Path(td) / "overlay.qcow2"
