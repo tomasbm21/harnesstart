@@ -20,21 +20,34 @@ from .config import Config, load_config
 from .doctor import dumps, render_text, report
 from .guards import check_text
 from .paths import product_dir
+from .prompt_keys import ensure_boot_keys
 from .secrets import assert_no_secrets, redact
 from .swarm import snapshot
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
+    shared = argparse.ArgumentParser(add_help=False)
+    shared.add_argument(
+        "--no-prompt",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="do not prompt for missing keys (also CLAW_NO_KEY_PROMPT=1)",
+    )
     parser = argparse.ArgumentParser(
         prog="claw",
         description="Norfront Claw on Linux cloud — Prime Agent brain, Jev browser hook.",
+        parents=[shared],
     )
     parser.add_argument("--version", action="store_true", help="print product version")
     parser.add_argument("--repo", default=None, help="harnesstart repo root (or set CLAW_REPO)")
     sub = parser.add_subparsers(dest="cmd")
 
-    doc = sub.add_parser("doctor", help="Linux readiness; observe/guards do not need TypeSafe")
+    doc = sub.add_parser(
+        "doctor",
+        parents=[shared],
+        help="Linux readiness; observe/guards do not need TypeSafe",
+    )
     doc.add_argument("--json", action="store_true")
 
     sub.add_parser("status", help="Prime Agent daemon + adapter + computer")
@@ -42,7 +55,11 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("stop", help="Stop Prime Agent workers and supervisor")
     sub.add_parser("agents", help="List Prime Agent sessions (not Hermes kanban)")
 
-    run = sub.add_parser("run", help="One-shot Prime Agent turn (needs DEEPSEEK_API_KEY in env)")
+    run = sub.add_parser(
+        "run",
+        parents=[shared],
+        help="One-shot Prime Agent turn (needs DEEPSEEK_API_KEY in env)",
+    )
     run.add_argument("prompt", nargs="+")
     run.add_argument("--timeout", type=int, default=180)
 
@@ -54,11 +71,19 @@ def main(argv: list[str] | None = None) -> int:
     grd.add_argument("--text", default="", help="optional intent text to classify")
     grd.add_argument("--json", action="store_true")
 
-    brw = sub.add_parser("browse", help="Live Jev run() (TYPESAFE_API_KEY from env, never chat)")
+    brw = sub.add_parser(
+        "browse",
+        parents=[shared],
+        help="Live Jev run() (TYPESAFE_API_KEY from env, never chat)",
+    )
     brw.add_argument("url")
     brw.add_argument("goal", nargs="+")
 
-    chs = sub.add_parser("choose", help="Jev choose() after observe (TYPESAFE_API_KEY from env)")
+    chs = sub.add_parser(
+        "choose",
+        parents=[shared],
+        help="Jev choose() after observe (TYPESAFE_API_KEY from env)",
+    )
     chs.add_argument("url")
     chs.add_argument("goal", nargs="+")
     chs.add_argument("--json", action="store_true")
@@ -78,6 +103,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.repo:
         os.environ["CLAW_REPO"] = args.repo
     cfg = load_config()
+    cfg = ensure_boot_keys(
+        cfg,
+        command=str(args.cmd),
+        no_prompt=bool(getattr(args, "no_prompt", False)),
+    )
     handlers = {
         "doctor": _cmd_doctor,
         "status": _cmd_status,

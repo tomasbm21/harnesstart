@@ -26,6 +26,10 @@ export PATH="$HOME/.local/bin:$PATH"
 
 Put `DEEPSEEK_API_KEY` in repo-root `claw.env` (copy `claw.env.example`). Do not paste keys in chat.
 
+On a real terminal, `./product/claw doctor` and `./product/claw run` prompt once (hidden) for a missing DeepSeek key and write it to `claw.env`. `doctor` also offers TypeSafe (Enter skips). `choose` / `browse` prompt for TypeSafe. Non-TTY/CI never prompts.
+
+Skip prompts: `./product/claw --no-prompt doctor` or `CLAW_NO_KEY_PROMPT=1`.
+
 ```bash
 ./product/claw run "Reply with pong"    # needs DeepSeek in env
 ./product/claw status
