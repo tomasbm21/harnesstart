@@ -37,6 +37,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -668,6 +669,7 @@ export function Console() {
         </Tabs>
 
         <CommandDialog open={commandsOpen} onOpenChange={setCommandsOpen} title="Claw commands">
+          <Command>
           <CommandInput placeholder="Jump to a panel or mock a browser call" />
           <CommandList>
             <CommandEmpty>No matching command.</CommandEmpty>
@@ -707,6 +709,7 @@ export function Console() {
               </CommandItem>
             </CommandGroup>
           </CommandList>
+          </Command>
         </CommandDialog>
 
         <Dialog open={policyOpen} onOpenChange={setPolicyOpen}>
