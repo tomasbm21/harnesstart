@@ -45,6 +45,24 @@ Live Jev policy reads `TYPESAFE_API_KEY` from **env** (never chat):
 
 `observe` / `guards` / `policy` / `doctor` keep working when that key is unset.
 
+## Operator console
+
+A local Vite page at `product/ui` (shadcn/ui). It shows doctor, key presence (`set` / `missing` only), VM and brain picks, and mock observe / guards / choose / browse controls. It does not call DeepSeek or TypeSafe.
+
+```bash
+cd product/ui
+npm install
+npm run dev
+```
+
+Checked-in snapshot: `product/ui/public/status.json`. Refresh from this machine without printing secrets:
+
+```bash
+python3 product/ui/write_status.py
+```
+
+That writes gitignored `product/ui/public/status.local.json`, which the page prefers.
+
 Live Chrome observe needs the Jev extra once:
 
 ```bash

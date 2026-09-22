@@ -418,3 +418,13 @@ def jev_skill_dir(root: Path) -> Path | None:
 
 def typesafe_in_environ() -> bool:
     return bool(os.environ.get("TYPESAFE_API_KEY", "").strip())
+
+
+def live_browser_opt_in() -> bool:
+    """True only when CLAW_BROWSER_LIVE=1.
+
+    Default CI and ``./product/claw test`` leave this unset. Observe and
+    guards do not consult it. Live choose/browse stays a separate opt-in
+    path so a missing TypeSafe key cannot hang a run (non-TTY, no prompt).
+    """
+    return os.environ.get("CLAW_BROWSER_LIVE", "").strip() == "1"

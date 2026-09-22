@@ -1,0 +1,81 @@
+{
+  "source": "fixture",
+  "ok": true,
+  "host": "linux",
+  "provider": "deepseek",
+  "model": "deepseek-v4-pro",
+  "adapter": "claw-jev",
+  "keys": {
+    "DEEPSEEK_API_KEY": "missing",
+    "TYPESAFE_API_KEY": "missing",
+    "TEXT_MODEL_API_KEY": "missing",
+    "WEB_API_KEY": "missing",
+    "GH_TOKEN": "missing"
+  },
+  "checks": [
+    {
+      "id": "linux",
+      "ok": true,
+      "warning": false,
+      "detail": "Linux cloud host"
+    },
+    {
+      "id": "python",
+      "ok": true,
+      "warning": false,
+      "detail": "Python 3.11+"
+    },
+    {
+      "id": "typesafe",
+      "ok": true,
+      "warning": true,
+      "detail": "observe and guards do not need it; choose and browse do"
+    },
+    {
+      "id": "deepseek",
+      "ok": true,
+      "warning": true,
+      "detail": "missing — doctor still runs"
+    },
+    {
+      "id": "desktop-watch",
+      "ok": false,
+      "warning": true,
+      "detail": "stubbed; Jev inspector is adapter-side, not this CLI"
+    }
+  ],
+  "stubbed": [
+    "desktop-watch-takeover",
+    "r2-hardware-kvm",
+    "prime-bash-permission-extension",
+    "hermes-kanban"
+  ],
+  "vm": {
+    "selected": "qemu",
+    "selected_source": "default",
+    "accel": "tcg",
+    "r2_vm_boundary": true,
+    "r2_hardware_kvm": false,
+    "backends": [
+      {"id": "qemu", "live_start": "default", "present": true, "selected": true},
+      {"id": "firecracker", "live_start": "skipped", "present": false, "selected": false},
+      {"id": "celesto", "live_start": "skipped", "present": false, "selected": false},
+      {"id": "e2b", "live_start": "skipped", "present": false, "selected": false},
+      {"id": "agentenv", "live_start": "skipped", "present": false, "selected": false},
+      {"id": "microsandbox", "live_start": "skipped", "present": false, "selected": false},
+      {"id": "libkrun", "live_start": "skipped", "present": false, "selected": false}
+    ]
+  },
+  "brains": [
+    {"id": "prime", "selected": true},
+    {"id": "openhands", "selected": false},
+    {"id": "openclaw", "selected": false},
+    {"id": "goose", "selected": false}
+  ],
+  "browser": {
+    "observe_needs_key": false,
+    "guards_need_key": false,
+    "choose_needs_key": true,
+    "browse_needs_key": true
+  }
+}
