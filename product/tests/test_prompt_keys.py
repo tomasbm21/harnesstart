@@ -187,9 +187,11 @@ class PromptKeysTest(unittest.TestCase):
     def test_cli_has_no_api_key_flag(self) -> None:
         with patch("sys.stdout", new=StringIO()) as out:
             rc = main([])
-        self.assertEqual(rc, 2)
-        self.assertNotIn("--api-key", out.getvalue().lower())
-        self.assertNotIn("--apikey", out.getvalue().lower())
+        text = out.getvalue()
+        self.assertEqual(rc, 0)
+        self.assertEqual(len(text.splitlines()), 5)
+        self.assertNotIn("--api-key", text.lower())
+        self.assertNotIn("--apikey", text.lower())
 
     def test_should_prompt_false_without_tty(self) -> None:
         with patch("norfront_claw.prompt_keys.stdin_is_tty", return_value=False):

@@ -1,3 +1,5 @@
+Open it: double-click `Launch Claw.bat` on Windows, or run `./launch` on Linux and in Git Bash. That starts the console in your browser. `./product/claw ui` does the same.
+
 # Norfront Claw — Linux cloud product
 
 Prime Agent is the **brain**. Jev Ultrafast is the **browser** in `product/jev/` (stacked from [PR #1](https://github.com/tomasbm21/harnesstart/pull/1)). The **R2 VM computer** is `product/vm/` (stacked from [PR #3](https://github.com/tomasbm21/harnesstart/pull/3)). This tree is the Linux-cloud runtime: not Hermes, not Tomas’s Mac, not Remote Control.
@@ -29,6 +31,14 @@ Put `DEEPSEEK_API_KEY` in repo-root `claw.env` (copy `claw.env.example`). Do not
 On a real terminal, `./product/claw doctor` and `./product/claw run` prompt once (hidden) for a missing DeepSeek key and write it to `claw.env`. `doctor` also offers TypeSafe (Enter skips). `choose` / `browse` prompt for TypeSafe. Non-TTY/CI never prompts.
 
 Skip prompts: `./product/claw --no-prompt doctor` or `CLAW_NO_KEY_PROMPT=1`.
+
+Coding crew (orchestrator, writer, reviewer, UI specialist). Offline unless you set `CLAW_CREW_BASE_URL` or `CLAW_CREW_REMOTE=1`:
+
+```bash
+./product/claw crew "Add a phone-width form"
+./product/claw crew --intake ./notes
+./product/claw crew --from-number +15551212000 "Add a phone-width form"
+```
 
 ```bash
 ./product/claw run "Reply with pong"    # needs DeepSeek in env

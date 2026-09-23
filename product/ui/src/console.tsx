@@ -86,11 +86,26 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useTheme } from "@/components/theme-provider"
 import { KEY_NOTES, loadStatus, type Presence, type StatusSnapshot } from "@/lib/status"
+import { PhoneTaskForm } from "@/phone-task"
 
 const IRREVERSIBLE = /\b(pay|delete|send|post|sign up|signup)\b/i
 
 function presenceVariant(state: Presence): "default" | "outline" {
   return state === "set" ? "default" : "outline"
+}
+
+function YouAreHere() {
+  return (
+    <section
+      data-testid="you-are-here"
+      className="rounded-xl bg-primary px-5 py-6 text-primary-foreground"
+    >
+      <p className="text-sm font-medium tracking-wide">You are here</p>
+      <h1 className="mt-1 text-4xl font-semibold tracking-tight">Norfront Claw</h1>
+      <p className="mt-3 text-xl">This is Norfront Claw. It is running.</p>
+      <p className="mt-2 text-base">Next: keys are optional. Run doctor when you want them.</p>
+    </section>
+  )
 }
 
 export function Console() {
@@ -196,6 +211,8 @@ export function Console() {
   if (!status || refreshing) {
     return (
       <main className="mx-auto flex min-h-svh max-w-6xl flex-col gap-4 p-6">
+        <YouAreHere />
+        <PhoneTaskForm onLog={pushLog} />
         <Skeleton className="h-8 w-72" />
         <Skeleton className="h-24 w-full" />
         <div className="grid gap-3 md:grid-cols-3">
@@ -211,6 +228,8 @@ export function Console() {
 
   return (
       <main className={`mx-auto flex min-h-svh max-w-6xl flex-col gap-4 p-4 md:p-6 ${compact ? "text-xs" : ""}`}>
+        <YouAreHere />
+        <PhoneTaskForm onLog={pushLog} />
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Avatar>
@@ -228,7 +247,7 @@ export function Console() {
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
-              <h1 className="text-lg font-semibold tracking-tight">Norfront Claw</h1>
+              <p className="text-lg font-semibold tracking-tight">Norfront Claw</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">

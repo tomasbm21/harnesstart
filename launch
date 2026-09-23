@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Open the Norfront Claw console in a browser.
+# Windows double-click: Launch Claw.bat. This file is for Linux and Git Bash.
+# Starts product/ui only. Does not start a VM or any other CLI.
+set -euo pipefail
+
+cd "$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(pwd)"
+UI="$ROOT/product/ui"
+URL="http://127.0.0.1:5173"
+
+if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+  echo "Install Node from https://nodejs.org and run this file again."
+  exit 1
+fi
+
+if [[ ! -d "$UI/node_modules" ]]; then
+  echo "Installing the console. This happens once."
+  (cd "$UI" && npm install)
+fi
+
+open_browser() {
+  local url="$1"
+  local uname_s
+  uname_s="$(uname -s 2>/dev/null || true)"
+  case "$uname_s" in
+    MINGW*|MSYS*|CYGWIN*)
+      if command -v cmd.exe >/dev/null 2>&1; then
+        cmd.exe /c start "" "$url" >/dev/null 2>&1 || true
+        return 0
+      fi
+      ;;
+  esac
+  if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$url" >/dev/null 2>&1 || true
+    return 0
+  fi
+  if command -v open >/dev/null 2>&1; then
+    open "$url" >/dev/null 2>&1 || true
+    return 0
+  fi
+  printf 'Open this in your browser: %s\n' "$url"
+}
+
+# Wait until the console answers, then open it. Cap the wait so this cannot hang.
+(
+  if node -e '
+    const http = require("http");
+    const url = process.argv[1];
+    const tries = 40;
+    const attempt = (n) => {
+      const req = http.get(url, (res) => { res.resume(); process.exit(0); });
+      req.on("error", () => {
+        if (n + 1 >= tries) process.exit(1);
+        setTimeout(() => attempt(n + 1), 500);
+      });
+      req.setTimeout(800, () => req.destroy());
+    };
+    attempt(0);
+  ' "$URL"; then
+    open_browser "$URL"
+  fi
+) &
+
+echo "Norfront Claw is starting."
+echo "Leave this window open. Close it to stop."
+echo "$URL"
+cd "$UI"
+exec npm run dev -- --host 127.0.0.1 --port 5173 --strictPort

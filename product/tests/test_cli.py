@@ -163,6 +163,72 @@ class CliTest(unittest.TestCase):
         self.assertTrue(CLAW.is_file())
         self.assertTrue(os.access(CLAW, os.X_OK), "product/claw must be executable")
 
+    def test_no_args_is_five_line_you_are_here(self) -> None:
+        proc = self._run()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        lines = proc.stdout.splitlines()
+        self.assertEqual(len(lines), 5, proc.stdout)
+        self.assertTrue(lines[0].startswith("Open the console:"))
+        self.assertIn("./launch", lines[0])
+        self.assertIn("./product/claw ui", lines[0])
+        lowered = proc.stdout.lower()
+        self.assertNotIn("hermes", lowered)
+        self.assertNotIn("claw-brains", lowered)
+
+    def test_you_are_here_windows_points_at_bat(self) -> None:
+        from norfront_claw.cli import you_are_here_text
+
+        lines = you_are_here_text(windows=True).splitlines()
+        self.assertEqual(len(lines), 5)
+        self.assertEqual(lines[0], "Open the console: double-click Launch Claw.bat")
+
+    def test_help_still_lists_subcommands(self) -> None:
+        proc = self._run("--help")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("doctor", proc.stdout)
+        self.assertIn("ui", proc.stdout)
+        self.assertIn("test", proc.stdout)
+
+    def test_launch_files_only_start_the_console(self) -> None:
+        bat = (REPO / "Launch Claw.bat").read_text(encoding="utf-8")
+        launch = (REPO / "launch").read_text(encoding="utf-8")
+        self.assertTrue(os.access(REPO / "launch", os.X_OK))
+        for text in (bat, launch):
+            self.assertIn("Install Node from https://nodejs.org and run this file again.", text)
+            self.assertIn("http://127.0.0.1:5173", text)
+            self.assertNotIn("claw-brains", text)
+            self.assertNotIn("claw-vm", text)
+            self.assertNotIn("hermes", text.lower())
+        self.assertIn("product\\ui", bat)
+        self.assertIn("product/ui", launch)
+
+    def test_ui_execs_launch_and_does_not_prompt(self) -> None:
+        from unittest.mock import patch
+
+        from norfront_claw.cli import main
+
+        with patch("norfront_claw.prompt_keys._read_secret", side_effect=AssertionError("prompted")):
+            with patch("norfront_claw.cli.os.execv", side_effect=SystemExit(7)) as execv:
+                with self.assertRaises(SystemExit) as ctx:
+                    main(["ui"])
+        self.assertEqual(ctx.exception.code, 7)
+        script = execv.call_args.args[0]
+        self.assertTrue(str(script).endswith("/launch"), script)
+
+    def test_wrapper_no_args_does_not_prompt(self) -> None:
+        env = os.environ.copy()
+        env["CLAW_NO_KEY_PROMPT"] = "1"
+        proc = subprocess.run(
+            [str(CLAW)],
+            check=False,
+            capture_output=True,
+            text=True,
+            cwd=str(REPO),
+            env=env,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(len(proc.stdout.splitlines()), 5)
+
 
 if __name__ == "__main__":
     unittest.main()
