@@ -1,4 +1,4 @@
-Open it: double-click `Launch Claw.bat` on Windows, or run `./launch` on Linux and in Git Bash. That starts the console in your browser. `./product/claw ui` does the same.
+Open the whole app with one step: double-click `Launch Claw.bat` on Windows, or run `./launch` on Linux and in Git Bash. That installs anything missing, runs the checks, and opens the console. Leave the window open.
 
 # Norfront Claw — Linux cloud product
 

@@ -39,6 +39,9 @@ export type StatusSnapshot = {
     choose_needs_key: boolean
     browse_needs_key: boolean
   }
+  boot: {
+    notes: string[]
+  }
 }
 
 const KEY_NAMES = [
@@ -166,6 +169,14 @@ export function normalizeStatus(raw: unknown): StatusSnapshot {
       guards_need_key: browserIn.guards_need_key === true,
       choose_needs_key: browserIn.choose_needs_key !== false,
       browse_needs_key: browserIn.browse_needs_key !== false,
+    },
+    boot: {
+      notes: Array.isArray(data.boot && (data.boot as Record<string, unknown>).notes)
+        ? ((data.boot as Record<string, unknown>).notes as unknown[])
+            .filter((item): item is string => typeof item === "string")
+            .map((item) => text(item, ""))
+            .filter((item) => item.length > 0)
+        : [],
     },
   }
 }

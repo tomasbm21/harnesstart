@@ -189,18 +189,17 @@ class CliTest(unittest.TestCase):
         self.assertIn("ui", proc.stdout)
         self.assertIn("test", proc.stdout)
 
-    def test_launch_files_only_start_the_console(self) -> None:
+    def test_launch_files_boot_the_whole_app(self) -> None:
         bat = (REPO / "Launch Claw.bat").read_text(encoding="utf-8")
         launch = (REPO / "launch").read_text(encoding="utf-8")
         self.assertTrue(os.access(REPO / "launch", os.X_OK))
         for text in (bat, launch):
-            self.assertIn("Install Node from https://nodejs.org and run this file again.", text)
-            self.assertIn("http://127.0.0.1:5173", text)
+            self.assertIn("norfront_claw.boot", text)
             self.assertNotIn("claw-brains", text)
-            self.assertNotIn("claw-vm", text)
-            self.assertNotIn("hermes", text.lower())
-        self.assertIn("product\\ui", bat)
-        self.assertIn("product/ui", launch)
+            self.assertNotIn("npm run dev", text)
+            self.assertNotIn("Install Node from https://nodejs.org", text)
+        self.assertIn("winget install", bat)
+        self.assertIn("uv python install", launch)
 
     def test_ui_execs_launch_and_does_not_prompt(self) -> None:
         from unittest.mock import patch

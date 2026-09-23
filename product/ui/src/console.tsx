@@ -103,7 +103,7 @@ function YouAreHere() {
       <p className="text-sm font-medium tracking-wide">You are here</p>
       <h1 className="mt-1 text-4xl font-semibold tracking-tight">Norfront Claw</h1>
       <p className="mt-3 text-xl">This is Norfront Claw. It is running.</p>
-      <p className="mt-2 text-base">Next: keys are optional. Run doctor when you want them.</p>
+      <p className="mt-2 text-base">Keys are optional. The task box under this is the crew.</p>
     </section>
   )
 }
@@ -230,6 +230,16 @@ export function Console() {
       <main className={`mx-auto flex min-h-svh max-w-6xl flex-col gap-4 p-4 md:p-6 ${compact ? "text-xs" : ""}`}>
         <YouAreHere />
         <PhoneTaskForm onLog={pushLog} />
+        {status.boot.notes.length > 0 ? (
+          <div data-testid="boot-notes" className="mx-auto flex w-full max-w-md flex-col gap-2">
+            {status.boot.notes.map((note) => (
+              <Alert key={note}>
+                <AlertTitle>Heads up</AlertTitle>
+                <AlertDescription>{note}</AlertDescription>
+              </Alert>
+            ))}
+          </div>
+        ) : null}
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Avatar>
