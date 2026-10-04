@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import os
-import pwd
 import shutil
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
+
+try:
+    import pwd
+except ImportError:  # Windows has no pwd module
+    pwd = None  # type: ignore[assignment]
 
 
 def have(cmd: str) -> bool:
@@ -21,8 +25,31 @@ def have(cmd: str) -> bool:
     return False
 
 
+def _euid() -> int | None:
+    fn = getattr(os, "geteuid", None)
+    if not callable(fn):
+        return None
+    try:
+        return int(fn())
+    except OSError:
+        return None
+
+
+def _uid() -> int | None:
+    fn = getattr(os, "getuid", None)
+    if not callable(fn):
+        return None
+    try:
+        return int(fn())
+    except OSError:
+        return None
+
+
 def can_sudo() -> bool:
-    if os.geteuid() == 0:
+    euid = _euid()
+    if euid is None:
+        return False
+    if euid == 0:
         return True
     try:
         return subprocess.run(
@@ -37,10 +64,13 @@ def can_sudo() -> bool:
 
 
 def username() -> str:
-    try:
-        return pwd.getpwuid(os.getuid()).pw_name
-    except KeyError:
-        return os.environ.get("USER", "ubuntu")
+    uid = _uid()
+    if pwd is not None and uid is not None:
+        try:
+            return pwd.getpwuid(uid).pw_name
+        except KeyError:
+            pass
+    return os.environ.get("USER") or os.environ.get("USERNAME") or "user"
 
 
 def run(
@@ -53,7 +83,7 @@ def run(
     cwd: str | os.PathLike[str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     cmd = list(argv)
-    if privileged and os.geteuid() != 0:
+    if privileged and _euid() != 0:
         cmd = ["sudo", "-n", *cmd]
     return subprocess.run(
         cmd,

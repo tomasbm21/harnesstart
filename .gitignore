@@ -12,3 +12,7 @@ _to_delete/
 __pycache__/
 .venv/
 .DS_Store
+
+# Windows portable build (release asset; do not commit the zip or its node_modules)
+packaging/windows/dist/
+packaging/windows/.cache/

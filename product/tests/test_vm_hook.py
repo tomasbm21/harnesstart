@@ -3,12 +3,20 @@ from __future__ import annotations
 import json
 import os
 import stat
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from norfront_claw.config import load_config
-from norfront_claw.doctor import report, run_claw_vm_doctor
+from norfront_claw.doctor import (
+    chrome_search_paths,
+    claw_vm_doctor_argv,
+    claw_vm_doctor_env,
+    report,
+    run_claw_vm_doctor,
+)
 
 
 FAKE_CLAW_VM = r"""#!/usr/bin/env python3
@@ -87,6 +95,34 @@ class VmHookTest(unittest.TestCase):
         self.assertIn("never --probe-vcpu", ids["kvm"]["detail"])
         blob = json.dumps(payload)
         self.assertNotIn("--probe-vcpu", blob.replace("never --probe-vcpu", ""))
+
+    def test_windows_vm_check_uses_this_python(self) -> None:
+        script = self.root / "product" / "vm" / "claw-vm"
+        script.parent.mkdir()
+        script.write_text("#!/bin/sh\necho no\n", encoding="utf-8")
+        with mock.patch("norfront_claw.doctor.sys.platform", "win32"):
+            argv = claw_vm_doctor_argv(self.root)
+            env = claw_vm_doctor_env(self.root)
+        self.assertIsNotNone(argv)
+        assert argv is not None
+        self.assertEqual(argv[0], sys.executable)
+        self.assertEqual(argv[1:], ["-m", "claw_vm", "doctor", "--json"])
+        self.assertNotIn("--probe-vcpu", argv)
+        self.assertIn(str(self.root / "product" / "vm"), env["PYTHONPATH"])
+
+    def test_chrome_search_includes_windows_install(self) -> None:
+        os.environ["PROGRAMFILES"] = r"C:\Program Files"
+        paths = chrome_search_paths()
+        self.assertTrue(any(path.endswith("chrome.exe") and "Chrome" in path for path in paths))
+
+    def test_vm_doctor_runs_without_posix_euid(self) -> None:
+        vm_dir = Path(__file__).resolve().parents[1] / "vm"
+        sys.path.insert(0, str(vm_dir))
+        import claw_vm.priv as priv
+
+        with mock.patch("claw_vm.priv._euid", return_value=None):
+            self.assertFalse(priv.can_sudo())
+        self.assertIsInstance(priv.can_sudo(), bool)
 
 
 if __name__ == "__main__":

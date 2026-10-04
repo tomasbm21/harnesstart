@@ -45,12 +45,30 @@ def claw_vm_bin(root: Path) -> Path | None:
     return None
 
 
-def run_claw_vm_doctor(root: Path) -> dict | None:
-    """Thin hook: call product/vm/claw-vm doctor --json. Never --probe-vcpu."""
+def claw_vm_doctor_argv(root: Path) -> list[str] | None:
+    """How to run the VM check. Windows has no bash, so use this Python."""
     binary = claw_vm_bin(root)
     if binary is None:
         return None
-    argv = [str(binary), "doctor", "--json"]
+    if sys.platform == "win32":
+        return [sys.executable, "-m", "claw_vm", "doctor", "--json"]
+    return [str(binary), "doctor", "--json"]
+
+
+def claw_vm_doctor_env(root: Path) -> dict[str, str]:
+    env = os.environ.copy()
+    if sys.platform == "win32":
+        vm_dir = str(product_dir(root) / "vm")
+        prefix = env.get("PYTHONPATH", "")
+        env["PYTHONPATH"] = vm_dir + (os.pathsep + prefix if prefix else "")
+    return env
+
+
+def run_claw_vm_doctor(root: Path) -> dict | None:
+    """Thin hook: call product/vm/claw-vm doctor --json. Never --probe-vcpu."""
+    argv = claw_vm_doctor_argv(root)
+    if argv is None:
+        return None
     if any(part == "--probe-vcpu" for part in argv):
         raise RuntimeError("refusing to pass --probe-vcpu to claw-vm")
     try:
@@ -61,7 +79,7 @@ def run_claw_vm_doctor(root: Path) -> dict | None:
             text=True,
             timeout=45,
             cwd=str(root),
-            env=os.environ.copy(),
+            env=claw_vm_doctor_env(root),
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         return {"ok": False, "error": type(exc).__name__, "present": True}
@@ -91,28 +109,41 @@ class Check:
     warning: bool = False
 
 
-def _chrome_bin() -> str | None:
-    for candidate in (
-        os.environ.get("CHROME_BIN"),
-        os.environ.get("CLAW_CHROME"),
+def chrome_search_paths() -> list[str]:
+    """Chrome stays installed on the machine. Look in the usual places."""
+    home = Path.home()
+    paths = [
+        os.environ.get("CHROME_BIN") or "",
+        os.environ.get("CLAW_CHROME") or "",
         "/opt/google/chrome/chrome",
         "/usr/bin/google-chrome",
         "/usr/bin/google-chrome-stable",
         "/usr/bin/chromium",
         "/usr/bin/chromium-browser",
-    ):
-        if candidate and Path(candidate).exists():
+        str(home / "AppData" / "Local" / "Google" / "Chrome" / "Application" / "chrome.exe"),
+    ]
+    for key in ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA"):
+        base = os.environ.get(key)
+        if base:
+            paths.append(str(Path(base) / "Google" / "Chrome" / "Application" / "chrome.exe"))
+    return paths
+
+
+def _chrome_bin() -> str | None:
+    for candidate in chrome_search_paths():
+        if candidate and Path(candidate).is_file():
             return candidate
-    return shutil.which("google-chrome") or shutil.which("chromium")
+    return shutil.which("google-chrome") or shutil.which("chromium") or shutil.which("chrome")
 
 
 def collect(cfg: Config, vm: dict | None = None) -> list[Check]:
     checks: list[Check] = []
     system = platform.system()
+    # Linux cloud and the portable Windows package are both hosts.
     checks.append(
         Check(
             "linux",
-            system == "Linux",
+            system in {"Linux", "Windows"},
             f"{system} {platform.release()} {platform.machine()}",
         )
     )

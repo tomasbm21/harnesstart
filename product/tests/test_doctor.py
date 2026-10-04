@@ -5,6 +5,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from norfront_claw.config import load_config
 from norfront_claw.doctor import report
@@ -34,6 +35,19 @@ class DoctorTest(unittest.TestCase):
         self.assertEqual(payload["keys"]["TYPESAFE_API_KEY"], "missing")
         self.assertFalse(payload["r2_isolated"])
         self.assertEqual(payload["adapter"], "missing-jev")
+
+    def test_windows_host_is_ready(self) -> None:
+        with (
+            mock.patch("norfront_claw.doctor.platform.system", return_value="Windows"),
+            mock.patch("norfront_claw.doctor.platform.release", return_value="10"),
+            mock.patch("norfront_claw.doctor.platform.machine", return_value="AMD64"),
+        ):
+            payload = report(load_config(self.root))
+        ids = {item["id"]: item for item in payload["checks"]}
+        self.assertTrue(ids["linux"]["ok"])
+        self.assertIn("Windows", ids["linux"]["detail"])
+        self.assertEqual(payload["host"], "windows")
+        self.assertTrue(payload["ready"])
 
 
 if __name__ == "__main__":
