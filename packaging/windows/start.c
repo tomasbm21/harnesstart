@@ -100,9 +100,10 @@ int wmain(void) {
     SetEnvironmentVariableW(L"PYTHONUTF8", L"1");
     SetEnvironmentVariableW(L"PYTHONIOENCODING", L"utf-8");
     SetEnvironmentVariableW(L"PYTHONDONTWRITEBYTECODE", L"1");
+    SetEnvironmentVariableW(L"PYTHONUNBUFFERED", L"1");
     SetConsoleTitleW(L"Norfront Claw");
 
-    _snwprintf(cmdline, 1600, L"\"%s\" -m norfront_claw.boot", python);
+    _snwprintf(cmdline, 1600, L"\"%s\" -u -m norfront_claw.boot", python);
     cmdline[1599] = L'\0';
     code = child_exit(python, cmdline, root);
     if (code != 0) {

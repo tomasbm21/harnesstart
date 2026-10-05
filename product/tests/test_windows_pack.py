@@ -50,6 +50,13 @@ class WindowsPackTest(unittest.TestCase):
         self.assertFalse(self.pack.is_pe(b"\x7fELF\x02"))
         self.assertTrue(self.pack.is_pe(b"MZ\x90\x00"))
 
+    def test_start_exe_runs_python_unbuffered(self) -> None:
+        text = (
+            Path(__file__).resolve().parents[2] / "packaging" / "windows" / "start.c"
+        ).read_text(encoding="utf-8")
+        self.assertIn("PYTHONUNBUFFERED", text)
+        self.assertIn("-u -m norfront_claw.boot", text)
+
     def test_scrub_drops_key_names(self) -> None:
         import os
 

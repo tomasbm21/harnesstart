@@ -180,13 +180,26 @@ class PrimeBrain:
 
 
 def install_prime_agent(*, timeout: int = 180) -> subprocess.CompletedProcess[str]:
-    """Official native installer. Noninteractive; bootstraps the Python kernel."""
+    """Official native installer. Noninteractive; bootstraps the Python kernel.
+
+    `timeout` is the whole download plus install, not each step on its own.
+    """
+    import time
+
     env = os.environ.copy()
     env["PRIME_AGENT_INSTALLER_NONINTERACTIVE"] = "1"
     env["PRIME_AGENT_BOOTSTRAP_KERNEL_ON_INSTALL"] = "1"
     curl = shutil.which("curl")
     if not curl:
         raise BrainError("curl is required to install prime-agent")
+    deadline = time.monotonic() + timeout
+
+    def remaining() -> float:
+        left = deadline - time.monotonic()
+        if left <= 0:
+            raise subprocess.TimeoutExpired("prime-agent", timeout)
+        return left
+
     script = subprocess.run(
         [
             curl,
@@ -200,7 +213,7 @@ def install_prime_agent(*, timeout: int = 180) -> subprocess.CompletedProcess[st
         check=False,
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=remaining(),
         env=env,
     )
     if script.returncode != 0:
@@ -213,7 +226,7 @@ def install_prime_agent(*, timeout: int = 180) -> subprocess.CompletedProcess[st
         check=False,
         capture_output=True,
         text=True,
-        timeout=timeout,
+        timeout=remaining(),
         env=env,
     )
     return installer

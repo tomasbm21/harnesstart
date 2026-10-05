@@ -147,6 +147,10 @@ def ensure_boot_keys(
     wanted = keys_for_command(command)
     if not wanted or not should_prompt(no_prompt=no_prompt):
         return cfg
+    pending = [name for name, _optional in wanted if not secret_is_set(name)]
+    if not pending:
+        return cfg
+    print("Asking for a key. Typing stays hidden.", file=sys.stderr, flush=True)
     wrote = False
     env_path = claw_env_path(cfg.repo_root)
     for name, optional in wanted:

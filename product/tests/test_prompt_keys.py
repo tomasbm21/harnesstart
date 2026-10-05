@@ -138,6 +138,8 @@ class PromptKeysTest(unittest.TestCase):
         self.assertEqual(rc, 0)
         blob = out.getvalue() + err.getvalue()
         self.assertNotIn(SAFE, blob)
+        self.assertIn("Asking for a key. Typing stays hidden.", err.getvalue())
+        self.assertNotIn("Asking for a key", out.getvalue())
         payload = json.loads(out.getvalue())
         self.assertEqual(payload["keys"]["DEEPSEEK_API_KEY"], "set")
         self.assertEqual(payload["keys"]["TYPESAFE_API_KEY"], "missing")

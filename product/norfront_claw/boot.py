@@ -24,6 +24,9 @@ from .secrets import redact
 CONSOLE_URL = "http://127.0.0.1:5173"
 CONSOLE_PORT = 5173
 NODE_VERSION = "v22.19.0"
+# Long enough to notice, short enough that a stuck download cannot look frozen.
+BOOT_STEP_TIMEOUT = 20
+BRAIN_MISSING = "The brain program is not installed. The console, checks, and crew still run."
 
 
 @dataclass
@@ -38,6 +41,15 @@ class BootHooks:
     open_browser: object
     wait: object
     ready: object
+
+
+def say(text: str) -> None:
+    """One plain sentence, flushed so a Windows console cannot sit blank."""
+    print(redact(text), flush=True)
+    try:
+        sys.stderr.flush()
+    except Exception:
+        pass
 
 
 def plain_notes(snapshot: dict, extra: list[str] | None = None) -> list[str]:
@@ -195,12 +207,12 @@ def ensure_prime(cfg) -> str:
     if PrimeBrain(cfg).which():
         return ""
     try:
-        install_prime_agent(timeout=180)
+        install_prime_agent(timeout=BOOT_STEP_TIMEOUT)
     except Exception:
-        return "The brain program is not installed. The console, checks, and crew still run."
+        return BRAIN_MISSING
     if PrimeBrain(cfg).which():
         return ""
-    return "The brain program is not installed. The console, checks, and crew still run."
+    return BRAIN_MISSING
 
 
 def ensure_jev(root: Path) -> str:
@@ -216,7 +228,7 @@ def ensure_jev(root: Path) -> str:
                 [uv, "sync", "--extra", "dev"],
                 cwd=jev,
                 check=False,
-                timeout=180,
+                timeout=BOOT_STEP_TIMEOUT,
                 capture_output=True,
                 text=True,
             )
@@ -228,7 +240,7 @@ def ensure_jev(root: Path) -> str:
                 [pip, "install", "-e", str(jev)],
                 cwd=root,
                 check=False,
-                timeout=180,
+                timeout=BOOT_STEP_TIMEOUT,
                 capture_output=True,
                 text=True,
             )
@@ -295,18 +307,19 @@ def wait_for_port(seconds: float = 40) -> bool:
 def run_boot(hooks: BootHooks) -> int:
     if hooks.port_open():
         hooks.refresh(True)
-        print("Norfront Claw is already running.")
-        print(CONSOLE_URL)
+        say("Norfront Claw is already running.")
+        say(CONSOLE_URL)
         hooks.open_browser()
         return 0
     claim = claim_boot()
     if claim == "busy":
-        print("Norfront Claw is already starting.")
-        print(CONSOLE_URL)
+        say("Norfront Claw is already starting.")
+        say(CONSOLE_URL)
         hooks.open_browser()
         return 0
     extra: list[str] = []
     try:
+        say("Checking this machine.")
         node = hooks.ensure_node()
         if not node:
             extra.append("Node did not install. The console cannot open. The checks still ran.")
@@ -316,29 +329,34 @@ def run_boot(hooks: BootHooks) -> int:
             except Exception:
                 extra.append("The console files did not install. The checks still ran.")
                 node = None
+        say("Downloading the brain program.")
         prime_note = hooks.ensure_prime()
-        jev_note = hooks.ensure_jev()
         if prime_note:
+            say(prime_note)
             extra.append(prime_note)
+        say("Installing the browser package.")
+        jev_note = hooks.ensure_jev()
         if jev_note:
+            say(jev_note)
             extra.append(jev_note)
         hooks.refresh(False, extra)
         if not node:
-            print("Norfront Claw checks finished. The console could not start.")
+            say("Norfront Claw checks finished. The console could not start.")
             return 0
         if hooks.port_open():
-            print("Norfront Claw is already running.")
-            print(CONSOLE_URL)
+            say("Norfront Claw is already running.")
+            say(CONSOLE_URL)
             hooks.open_browser()
             return 0
+        say("Opening the page.")
         proc = hooks.start_console()
         if not hooks.ready():
-            print("The console did not answer. The checks still ran.")
+            say("The console did not answer. The checks still ran.")
             proc.terminate()
             return 0
-        print("Norfront Claw is running.")
-        print("Leave this window open. Close it to stop.")
-        print(CONSOLE_URL)
+        say("Norfront Claw is running.")
+        say("Leave this window open. Close it to stop.")
+        say(CONSOLE_URL)
         hooks.open_browser()
         return int(hooks.wait(proc))
     finally:
@@ -388,9 +406,14 @@ def default_hooks(root: Path) -> BootHooks:
 
 
 def main() -> int:
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(line_buffering=True)
+        except Exception:
+            pass
     root = repo_root()
     os.environ.setdefault("CLAW_REPO", str(root))
-    print(redact("Norfront Claw is starting."))
+    say("Norfront Claw is starting.")
     return run_boot(default_hooks(root))
 
 

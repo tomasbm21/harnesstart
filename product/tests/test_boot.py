@@ -1,11 +1,22 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import tempfile
 import unittest
+from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
-from norfront_claw.boot import BootHooks, ensure_jev, node_archive, plain_notes, run_boot
+from norfront_claw.boot import (
+    BOOT_STEP_TIMEOUT,
+    BootHooks,
+    ensure_jev,
+    ensure_prime,
+    node_archive,
+    plain_notes,
+    run_boot,
+)
 
 
 def _hooks(**overrides: object) -> BootHooks:
@@ -133,3 +144,47 @@ class BootTest(unittest.TestCase):
         note = ensure_jev(Path(self.tmp.name))
         self.assertIn("not on this checkout", note)
         self.assertNotIn("pip", note)
+
+    def test_progress_lines_are_flushed_before_slow_steps(self) -> None:
+        buf = StringIO()
+        with patch("sys.stdout", buf):
+            code = run_boot(_hooks())
+        self.assertEqual(code, 0)
+        text = buf.getvalue()
+        checking = text.index("Checking this machine.")
+        brain = text.index("Downloading the brain program.")
+        browser = text.index("Installing the browser package.")
+        opening = text.index("Opening the page.")
+        self.assertLess(checking, brain)
+        self.assertLess(brain, browser)
+        self.assertLess(browser, opening)
+        self.assertNotIn("npm ", text)
+        self.assertNotIn("claw.env", text)
+
+    def test_brain_timeout_still_opens_the_page(self) -> None:
+        buf = StringIO()
+        with patch("sys.stdout", buf):
+            code = run_boot(
+                _hooks(
+                    ensure_prime=lambda: (
+                        "The brain program is not installed. "
+                        "The console, checks, and crew still run."
+                    )
+                )
+            )
+        self.assertEqual(code, 0)
+        text = buf.getvalue()
+        self.assertIn("brain program is not installed", text)
+        self.assertLess(text.index("brain program is not installed"), text.index("Opening the page."))
+
+    def test_prime_download_uses_a_short_timeout(self) -> None:
+        with patch("norfront_claw.boot.PrimeBrain") as brain:
+            brain.return_value.which.return_value = None
+            with patch("norfront_claw.boot.install_prime_agent") as install:
+                install.side_effect = subprocess.TimeoutExpired("prime-agent", BOOT_STEP_TIMEOUT)
+                note = ensure_prime(object())
+        self.assertEqual(install.call_args.kwargs["timeout"], BOOT_STEP_TIMEOUT)
+        self.assertLessEqual(BOOT_STEP_TIMEOUT, 20)
+        self.assertIn("brain program is not installed", note)
+        self.assertNotIn("http", note)
+        self.assertNotIn("curl", note)

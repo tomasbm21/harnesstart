@@ -5,9 +5,16 @@ import stat
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from norfront_claw.brain import PrimeBrain
+from subprocess import CompletedProcess
+
+from norfront_claw.brain import PrimeBrain, install_prime_agent
 from norfront_claw.config import load_config
+
+
+def subprocess_ok(argv, stdout: str = "") -> CompletedProcess[str]:
+    return CompletedProcess(argv, 0, stdout=stdout, stderr="")
 
 
 class BrainTest(unittest.TestCase):
@@ -45,6 +52,21 @@ class BrainTest(unittest.TestCase):
         self.assertIn("deepseek", argv)
         self.assertIn("--no-context-files", argv)
         self.assertIn("claw-brain-prompt", joined)
+
+    def test_install_timeout_is_one_budget(self) -> None:
+        seen: list[float] = []
+
+        def fake_run(argv, **kwargs):
+            seen.append(float(kwargs["timeout"]))
+            if argv[:1] == ["sh"]:
+                return subprocess_ok(argv)
+            return subprocess_ok(argv, stdout="echo ok\n")
+
+        with patch("norfront_claw.brain.shutil.which", return_value="/usr/bin/curl"):
+            with patch("norfront_claw.brain.subprocess.run", side_effect=fake_run):
+                install_prime_agent(timeout=20)
+        self.assertEqual(len(seen), 2)
+        self.assertTrue(all(item <= 20 for item in seen))
 
     def test_run_without_key_fails_before_exec(self) -> None:
         cfg = load_config(self.root)
