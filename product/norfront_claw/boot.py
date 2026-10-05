@@ -18,7 +18,7 @@ from .brain import PrimeBrain, install_prime_agent
 from .config import load_config
 from .doctor import report
 from .paths import repo_root, xdg_data_home
-from .prompt_keys import ensure_boot_keys
+from .prompt_keys import ensure_boot_keys, stdin_is_tty
 from .secrets import redact
 
 CONSOLE_URL = "http://127.0.0.1:5173"
@@ -38,6 +38,7 @@ class BootHooks:
     open_browser: object
     wait: object
     ready: object
+    interactive: object = None
 
 
 def plain_notes(snapshot: dict, extra: list[str] | None = None) -> list[str]:
@@ -260,13 +261,47 @@ def refresh_status(root: Path, *, no_prompt: bool, extra: list[str]) -> dict:
     return snapshot
 
 
+def terminate_console(proc) -> None:
+    """Stop the console server and its children.
+
+    `npm run dev` is a .cmd shim that spawns node, so on Windows terminating
+    just the shim orphans the server (the port stays busy and the next launch
+    thinks the app is still up). Kill the whole tree instead.
+    """
+    try:
+        if sys.platform == "win32":
+            pid = getattr(proc, "pid", None)
+            if pid:
+                subprocess.run(
+                    ["taskkill", "/F", "/T", "/PID", str(pid)],
+                    capture_output=True,
+                    check=False,
+                )
+                return
+        proc.terminate()
+    except Exception:
+        try:
+            proc.terminate()
+        except Exception:
+            pass
+
+
 def start_console(ui_dir: Path) -> subprocess.Popen[str]:
     npm = shutil.which("npm")
     if not npm:
         raise RuntimeError("npm missing")
+    # The dev server must NOT share the launch window's stdin: Vite reads the
+    # terminal for its own h/r/q shortcuts, which would swallow whatever the
+    # operator types at the claw> prompt. Its logs go to a file instead so they
+    # do not scribble over the prompt either.
+    log_path = state_dir() / "console.log"
+    sink = open(log_path, "ab", buffering=0)
     return subprocess.Popen(
         [npm, "run", "dev", "--", "--host", "127.0.0.1", "--port", str(CONSOLE_PORT), "--strictPort"],
         cwd=ui_dir,
+        stdin=subprocess.DEVNULL,
+        stdout=sink,
+        stderr=sink,
     )
 
 
@@ -334,12 +369,14 @@ def run_boot(hooks: BootHooks) -> int:
         proc = hooks.start_console()
         if not hooks.ready():
             print("The console did not answer. The checks still ran.")
-            proc.terminate()
+            terminate_console(proc)
             return 0
         print("Norfront Claw is running.")
         print("Leave this window open. Close it to stop.")
         print(CONSOLE_URL)
         hooks.open_browser()
+        if hooks.interactive is not None and stdin_is_tty():
+            return int(hooks.interactive(proc))
         return int(hooks.wait(proc))
     finally:
         release_boot()
@@ -370,8 +407,16 @@ def default_hooks(root: Path) -> BootHooks:
         try:
             return proc.wait()
         except KeyboardInterrupt:
-            proc.terminate()
+            terminate_console(proc)
             return 0
+
+    def interactive(proc: subprocess.Popen[str]) -> int:
+        from .repl import run_repl
+
+        def stop() -> None:
+            terminate_console(proc)
+
+        return run_repl(root, stop=stop)
 
     return BootHooks(
         port_open=port_open,
@@ -384,6 +429,7 @@ def default_hooks(root: Path) -> BootHooks:
         open_browser=open_browser,
         wait=wait,
         ready=wait_for_port,
+        interactive=interactive,
     )
 
 

@@ -10,6 +10,6 @@ The zip is written to `packaging/windows/dist/NorfrontClaw-windows-x64.zip`. Tha
 
 `start.exe` is at the top of the zip. It puts portable Python and portable Node on `PATH` and runs `python -m norfront_claw.boot`. The console packages are installed for Windows x64 while the zip is built, so the first double-click does not run `npm install` and does not need Git, winget, or an already-open terminal.
 
-First double-click runs the doctor (including the VM check), asks once for a missing DeepSeek key if the window is a terminal (the typing is hidden; Enter skips TypeSafe), may download Prime Agent, and opens http://127.0.0.1:5173. Chrome is not bundled. Missing hardware KVM or a TypeSafe key is a sentence on the page. The window stays open.
+First double-click runs the doctor (including the VM check), asks once for a missing DeepSeek key if the window is a terminal (the typing is hidden; Enter skips TypeSafe), may download Prime Agent, and opens http://127.0.0.1:5173. Chrome is not bundled. Missing hardware KVM or a TypeSafe key is a sentence on the page. The window stays open and, once booted, gives you a `claw>` prompt: type a task to hand it to the crew, or a claw subcommand (`status`, `doctor`, `crew <task>`, `run <task>`, `ui`, `help`, `quit`).
 
 A second double-click, while that window is still open, does not install anything and does not start a second console. It opens the page again.

@@ -3,7 +3,7 @@ Open the whole app with one step.
 - Windows download: unzip `NorfrontClaw-windows-x64.zip` and double-click `start.exe`. Python, Node, and the console packages are already inside. Git and winget are not required.
 - From a checkout: double-click `Launch Claw.bat` on Windows, or run `./launch` on Linux and in Git Bash. That installs anything missing.
 
-Leave the window open. The console is http://127.0.0.1:5173.
+Leave the window open. The console is http://127.0.0.1:5173. The launch window itself is also live: after boot it drops to a `claw>` prompt where you can type a task (the crew runs it) or a claw subcommand (`status`, `doctor`, `crew <task>`, `run <task>`, `ui`, `help`, `quit`). The dev server's own logs go to `~/.local/share/norfront-claw/boot/console.log` so they do not scribble over the prompt.
 
 # Norfront Claw — Linux cloud product
 
